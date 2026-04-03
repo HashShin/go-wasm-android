@@ -31,10 +31,24 @@ sed -i "s|versionCode [0-9]*|versionCode $VERSION_CODE|" \
 sed -i "s|versionName \".*\"|versionName \"$VERSION_NAME\"|" \
     "$ANDROID/app/build.gradle"
 
-# ── 1. Generate icons ─────────────────────────────────────────────────────────
+# ── 1. Generate splash.xml resource ──────────────────────────────────────────
+mkdir -p "$ANDROID/app/src/main/res/values"
+cat > "$ANDROID/app/src/main/res/values/splash.xml" << EOF
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="splash_enabled">$SPLASH_ENABLED</bool>
+    <color name="splash_background">$SPLASH_BG_COLOR</color>
+    <dimen name="splash_image_size">${SPLASH_IMAGE_SIZE}dp</dimen>
+    <integer name="splash_duration">$SPLASH_DURATION</integer>
+    <bool name="splash_animation">$SPLASH_ANIMATION</bool>
+</resources>
+EOF
+log "Splash: enabled=$SPLASH_ENABLED bg=$SPLASH_BG_COLOR size=${SPLASH_IMAGE_SIZE}dp duration=${SPLASH_DURATION}ms animation=$SPLASH_ANIMATION"
+
+# ── 2. Generate icons ─────────────────────────────────────────────────────────
 bash "$ROOT/scripts/gen-icons.sh"
 
-# ── 2. Compile Go → WASM ──────────────────────────────────────────────────────
+# ── 3. Compile Go → WASM ──────────────────────────────────────────────────────
 log "Compiling Go → WebAssembly..."
 mkdir -p "$ASSETS_DST"
 

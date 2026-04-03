@@ -97,13 +97,20 @@ make web
 
 ## Customise
 
-Edit `app/app.conf` to change the app name, ID, and version — applied automatically on every build:
+Edit `app/app.conf` — all settings are applied automatically on every build:
 
 ```bash
 APP_NAME="My App"
 APP_ID="com.example.myapp"
 VERSION_CODE=1
 VERSION_NAME="1.0"
+
+# Splash screen
+SPLASH_ENABLED=true       # false to disable entirely
+SPLASH_BG_COLOR="#FFFFFF" # background color
+SPLASH_IMAGE_SIZE=200     # icon size in dp
+SPLASH_DURATION=2000      # how long to show (milliseconds)
+SPLASH_ANIMATION=true     # fade + scale animation
 ```
 
 | File | What to change |
