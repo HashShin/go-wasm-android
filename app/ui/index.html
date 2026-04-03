@@ -152,13 +152,6 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url, body }),
           }).then(r => r.text()),
-
-        notify: (title, body) => new Promise((resolve, reject) => {
-          if (!('Notification' in window)) { reject('Not supported'); return; }
-          const show = () => { new Notification(title, { body }); resolve('sent'); };
-          if (Notification.permission === 'granted') { show(); }
-          else Notification.requestPermission().then(p => p === 'granted' ? show() : reject('permission denied'));
-        }),
       };
       showApp('Desktop (Go HTTP server)');
     }
@@ -362,18 +355,31 @@
       const title = document.getElementById('notifTitle').value || 'Go App';
       const body  = document.getElementById('notifBody').value  || 'Test notification';
       const el    = document.getElementById('notifResult');
-      try {
-        await GoApp.notify(title, body);
+
+      // Android WebView native bridge
+      if (window.AndroidNotification) {
+        AndroidNotification.show(title, body);
         el.textContent = 'Notification sent!';
-      } catch (err) {
-        const s = String(err);
-        if (s.includes('permission denied')) {
-          el.textContent = 'Permission denied — allow notifications in your browser or app settings';
-        } else if (s.includes('not supported')) {
-          el.textContent = 'Notifications not supported — requires HTTPS or localhost';
+        return;
+      }
+
+      // Browser Notification API (desktop / browser)
+      if (!('Notification' in window)) {
+        el.textContent = 'Notifications not supported — requires HTTPS or localhost';
+        return;
+      }
+      try {
+        const perm = Notification.permission === 'default'
+          ? await Notification.requestPermission()
+          : Notification.permission;
+        if (perm === 'granted') {
+          new Notification(title, { body });
+          el.textContent = 'Notification sent!';
         } else {
-          el.textContent = 'Error: ' + s;
+          el.textContent = 'Permission denied — allow notifications in your browser settings';
         }
+      } catch (e) {
+        el.textContent = 'Error: ' + e.message;
       }
     }
 
