@@ -5,6 +5,9 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.webkit.GeolocationPermissions;
+import android.webkit.PermissionRequest;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -25,16 +28,48 @@ public class MainActivity extends Activity {
         settings.setAllowFileAccessFromFileURLs(true);
         settings.setAllowUniversalAccessFromFileURLs(true);
         settings.setDomStorageEnabled(true);
+        settings.setGeolocationEnabled(true);
+        settings.setMediaPlaybackRequiresUserGesture(false);
 
         webView.setWebViewClient(new WebViewClient());
-        webView.addJavascriptInterface(new NotificationBridge(this), "AndroidNotification");
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onPermissionRequest(PermissionRequest request) {
+                // Grant camera/microphone access to the WebView
+                request.grant(request.getResources());
+            }
 
-        // Request POST_NOTIFICATIONS permission on Android 13+
-        if (Build.VERSION.SDK_INT >= 33 &&
-                checkSelfPermission("android.permission.POST_NOTIFICATIONS")
-                    != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 1);
+            @Override
+            public void onGeolocationPermissionsShowPrompt(
+                    String origin, GeolocationPermissions.Callback callback) {
+                callback.invoke(origin, true, false);
+            }
+        });
+
+        webView.addJavascriptInterface(new NotificationBridge(this), "AndroidNotification");
+        webView.addJavascriptInterface(new StorageBridge(this), "AndroidStorage");
+
+        // Request runtime permissions
+        String[] perms = {
+            "android.permission.CAMERA",
+            "android.permission.RECORD_AUDIO",
+            "android.permission.ACCESS_FINE_LOCATION",
+            "android.permission.ACCESS_COARSE_LOCATION",
+        };
+        if (Build.VERSION.SDK_INT >= 33) {
+            String[] with33 = new String[perms.length + 1];
+            System.arraycopy(perms, 0, with33, 0, perms.length);
+            with33[perms.length] = "android.permission.POST_NOTIFICATIONS";
+            perms = with33;
         }
+        boolean needsRequest = false;
+        for (String p : perms) {
+            if (checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED) {
+                needsRequest = true;
+                break;
+            }
+        }
+        if (needsRequest) requestPermissions(perms, 1);
 
         // Start loading immediately — runs in background while splash shows
         webView.loadUrl("file:///android_asset/index.html");

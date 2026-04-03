@@ -43,6 +43,43 @@
       <p id="tsResult" class="result"></p>
     </div>
 
+    <h2 class="section-title">Permission Tests</h2>
+
+    <div class="card">
+      <label>Storage</label>
+      <div class="btn-row">
+        <button onclick="doWriteFile()">Write File</button>
+        <button onclick="doReadFile()" class="btn-secondary">Read File</button>
+      </div>
+      <p id="storageResult" class="result"></p>
+    </div>
+
+    <div class="card">
+      <label>Camera</label>
+      <div class="btn-row">
+        <button onclick="doCamera()">Start Camera</button>
+        <button onclick="doStopCamera()" class="btn-secondary">Stop</button>
+      </div>
+      <video id="cameraStream" autoplay playsinline muted></video>
+      <p id="cameraResult" class="result"></p>
+    </div>
+
+    <div class="card">
+      <label>Microphone</label>
+      <div class="btn-row">
+        <button onclick="doMic()">Test Mic</button>
+        <button onclick="doStopMic()" class="btn-secondary">Stop</button>
+      </div>
+      <div class="volume-track"><div id="volumeFill" class="volume-fill"></div></div>
+      <p id="micResult" class="result"></p>
+    </div>
+
+    <div class="card">
+      <label>Location</label>
+      <button onclick="doLocation()">Get Location</button>
+      <p id="locationResult" class="result"></p>
+    </div>
+
     <h2 class="section-title">Notifications</h2>
 
     <div class="card">
@@ -195,6 +232,102 @@
         setStatus('getStatus', 'Error', false);
         el.textContent = String(err);
       }
+    }
+
+    // ── Storage ───────────────────────────────────────────────────────────────
+    function doWriteFile() {
+      const content = 'Test write at ' + new Date().toISOString();
+      const el = document.getElementById('storageResult');
+      if (window.AndroidStorage) {
+        el.textContent = AndroidStorage.writeFile('test.txt', content);
+      } else {
+        localStorage.setItem('test_file', content);
+        el.textContent = 'localStorage: ' + content;
+      }
+    }
+
+    function doReadFile() {
+      const el = document.getElementById('storageResult');
+      if (window.AndroidStorage) {
+        el.textContent = AndroidStorage.readFile('test.txt');
+      } else {
+        const val = localStorage.getItem('test_file');
+        el.textContent = val ? 'localStorage: ' + val : 'No file found — write first';
+      }
+    }
+
+    // ── Camera ────────────────────────────────────────────────────────────────
+    let cameraStream = null;
+
+    async function doCamera() {
+      const el = document.getElementById('cameraResult');
+      const video = document.getElementById('cameraStream');
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = cameraStream;
+        video.style.display = 'block';
+        el.textContent = 'Camera active';
+      } catch (e) {
+        el.textContent = 'Error: ' + e.message;
+      }
+    }
+
+    function doStopCamera() {
+      if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+      const video = document.getElementById('cameraStream');
+      video.srcObject = null;
+      video.style.display = 'none';
+      document.getElementById('cameraResult').textContent = 'Camera stopped';
+    }
+
+    // ── Microphone ────────────────────────────────────────────────────────────
+    let micStream = null, audioCtx = null, micRaf = null;
+
+    async function doMic() {
+      const el = document.getElementById('micResult');
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioCtx = new AudioContext();
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        audioCtx.createMediaStreamSource(micStream).connect(analyser);
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        const fill = document.getElementById('volumeFill');
+        el.textContent = 'Microphone active';
+        function tick() {
+          analyser.getByteFrequencyData(data);
+          fill.style.width = (Math.max(...data) / 255 * 100) + '%';
+          micRaf = requestAnimationFrame(tick);
+        }
+        tick();
+      } catch (e) {
+        el.textContent = 'Error: ' + e.message;
+      }
+    }
+
+    function doStopMic() {
+      if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+      if (audioCtx)  { audioCtx.close(); audioCtx = null; }
+      if (micRaf)    { cancelAnimationFrame(micRaf); micRaf = null; }
+      document.getElementById('volumeFill').style.width = '0%';
+      document.getElementById('micResult').textContent = 'Microphone stopped';
+    }
+
+    // ── Location ──────────────────────────────────────────────────────────────
+    function doLocation() {
+      const el = document.getElementById('locationResult');
+      el.textContent = 'Getting location…';
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const c = pos.coords;
+          el.textContent =
+            'Lat: ' + c.latitude.toFixed(6) + '\n' +
+            'Lng: ' + c.longitude.toFixed(6) + '\n' +
+            'Accuracy: ' + c.accuracy.toFixed(0) + 'm';
+        },
+        err => { el.textContent = 'Error: ' + err.message; },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
     }
 
     async function doNotify() {

@@ -185,3 +185,43 @@ textarea:focus {
 
 .status-ok  { background: #c6f6d5; color: #276749; }
 .status-err { background: #fed7d7; color: #9b2c2c; }
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.btn-row button {
+  flex: 1;
+  margin-bottom: 0;
+}
+.btn-secondary {
+  background: #e2e8f0 !important;
+  color: #4a5568 !important;
+}
+.btn-secondary:active {
+  background: #cbd5e0 !important;
+}
+
+#cameraStream {
+  display: none;
+  width: 100%;
+  border-radius: 8px;
+  margin-top: 10px;
+  background: #000;
+}
+
+.volume-track {
+  background: #e2e8f0;
+  border-radius: 4px;
+  height: 14px;
+  margin: 10px 0 4px;
+  overflow: hidden;
+}
+.volume-fill {
+  height: 100%;
+  width: 0%;
+  background: #667eea;
+  border-radius: 4px;
+  transition: width 0.05s linear;
+}
