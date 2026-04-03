@@ -119,6 +119,14 @@ func notify(_ js.Value, args []js.Value) any {
 	}
 
 	return newPromise(func(resolve, reject js.Value) {
+		// Native Android bridge — WebView does not support window.Notification
+		if bridge := js.Global().Get("AndroidNotification"); !bridge.IsUndefined() {
+			bridge.Call("show", title, body)
+			resolve.Invoke("sent")
+			return
+		}
+
+		// Browser fallback (desktop dev server)
 		notifClass := js.Global().Get("Notification")
 		if notifClass.IsUndefined() {
 			reject.Invoke("Notification API not supported")
