@@ -1,12 +1,14 @@
 APK      := builds/app-debug.apk
 APK_REL  := builds/app-release.apk
 
-.PHONY: all apk build release keygen clean web setup icons
+.PHONY: all apk build debug release keygen clean web setup icons
 
 # ── Build ─────────────────────────────────────────────────────────────────────
 all: apk
 
 apk: build
+
+debug: build
 
 build:
 	bash scripts/build.sh
