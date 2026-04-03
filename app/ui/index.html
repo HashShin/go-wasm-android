@@ -73,7 +73,7 @@
 
   <script src="wasm_exec.js" onerror="window._noWasm=true"></script>
   <script>
-    const IS_DESKTOP = location.protocol === 'http:' || location.protocol === 'https:';
+    const IS_DESKTOP = !window._forceWasm && (location.protocol === 'http:' || location.protocol === 'https:');
 
     function showApp(mode) {
       document.getElementById('modeTag').textContent = mode;

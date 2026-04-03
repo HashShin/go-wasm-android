@@ -257,7 +257,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	inject := ""
+	// Force WASM mode — dev server compiles and serves app.wasm directly
+	inject := `<script>window._forceWasm=true;</script>`
 
 	// ── Splash overlay ────────────────────────────────────────────────────────
 	cfg := loadSplashConfig()
