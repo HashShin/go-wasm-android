@@ -106,6 +106,48 @@ func httpPost(_ js.Value, args []js.Value) any {
 	})
 }
 
+// notify requests notification permission if needed, then fires a notification.
+// args[0] = title (string), args[1] = body (string)
+func notify(_ js.Value, args []js.Value) any {
+	title := "Go App"
+	body := "Hello from Go!"
+	if len(args) > 0 {
+		title = args[0].String()
+	}
+	if len(args) > 1 {
+		body = args[1].String()
+	}
+
+	return newPromise(func(resolve, reject js.Value) {
+		notifClass := js.Global().Get("Notification")
+		if notifClass.IsUndefined() {
+			reject.Invoke("Notification API not supported")
+			return
+		}
+
+		show := func() {
+			opts := js.Global().Get("Object").New()
+			opts.Set("body", body)
+			notifClass.New(title, opts)
+			resolve.Invoke("sent")
+		}
+
+		if notifClass.Get("permission").String() == "granted" {
+			show()
+			return
+		}
+
+		notifClass.Call("requestPermission").Call("then", js.FuncOf(func(_ js.Value, a []js.Value) any {
+			if a[0].String() == "granted" {
+				show()
+			} else {
+				reject.Invoke("permission denied")
+			}
+			return nil
+		}))
+	})
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 
 func main() {
@@ -116,6 +158,7 @@ func main() {
 		"add":       js.FuncOf(add),
 		"httpGet":   js.FuncOf(httpGet),
 		"httpPost":  js.FuncOf(httpPost),
+		"notify":    js.FuncOf(notify),
 	}))
 
 	select {}

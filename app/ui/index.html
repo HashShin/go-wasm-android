@@ -43,6 +43,16 @@
       <p id="tsResult" class="result"></p>
     </div>
 
+    <h2 class="section-title">Notifications</h2>
+
+    <div class="card">
+      <label>Test Notification (Go)</label>
+      <input id="notifTitle" type="text" placeholder="Title" value="Hello from Go!" />
+      <input id="notifBody"  type="text" placeholder="Message" value="This is a test notification" />
+      <button onclick="doNotify()">Send Notification</button>
+      <p id="notifResult" class="result"></p>
+    </div>
+
     <h2 class="section-title">HTTP Tests via Go (httpbun.com)</h2>
 
     <div class="card">
@@ -105,6 +115,13 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url, body }),
           }).then(r => r.text()),
+
+        notify: (title, body) => new Promise((resolve, reject) => {
+          if (!('Notification' in window)) { reject('Not supported'); return; }
+          const show = () => { new Notification(title, { body }); resolve('sent'); };
+          if (Notification.permission === 'granted') { show(); }
+          else Notification.requestPermission().then(p => p === 'granted' ? show() : reject('permission denied'));
+        }),
       };
       showApp('Desktop (Go HTTP server)');
     }
@@ -177,6 +194,18 @@
       } catch (err) {
         setStatus('getStatus', 'Error', false);
         el.textContent = String(err);
+      }
+    }
+
+    async function doNotify() {
+      const title = document.getElementById('notifTitle').value || 'Go App';
+      const body  = document.getElementById('notifBody').value  || 'Test notification';
+      const el    = document.getElementById('notifResult');
+      try {
+        await GoApp.notify(title, body);
+        el.textContent = 'Notification sent!';
+      } catch (err) {
+        el.textContent = 'Error: ' + err;
       }
     }
 
