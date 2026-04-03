@@ -1,0 +1,30 @@
+# Claude Code
+.claude/
+
+# Build outputs
+builds/
+
+# Android build artifacts
+platform/android/app/build/
+platform/android/.gradle/
+platform/android/local.properties
+platform/android/app/src/main/assets/
+platform/android/app/src/main/res/mipmap-*/
+
+# Desktop build artifacts
+platform/desktop/assets/
+platform/desktop/icon.png
+platform/desktop/icon.ico
+platform/desktop/resource.rc
+platform/desktop/resource.syso
+
+# Web generated icons
+app/ui/favicon.ico
+app/ui/favicon.png
+
+# Go build cache
+*.exe
+*.test
+
+# Temp
+*.wasm
