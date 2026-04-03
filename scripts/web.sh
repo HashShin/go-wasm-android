@@ -8,7 +8,10 @@ set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-command -v go &>/dev/null || { echo "ERROR: Go not found — run 'make setup' first"; exit 1; }
+if ! command -v go &>/dev/null; then
+    echo "[web] Go not found — running setup..."
+    bash "$ROOT/scripts/setup.sh"
+fi
 export PATH="$PATH:$(go env GOPATH)/bin"
 
 # Export splash config so the web server can inject it
