@@ -330,6 +330,8 @@ func splashHTMLHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	// Rewrite Android asset URLs to web-served paths
+	data = bytes.ReplaceAll(data, []byte("file:///android_asset/"), []byte("/"))
 	// Shim: SplashBridge.done() inside the iframe calls parent.SplashBridge.done()
 	shim := `<script>window.SplashBridge={done:function(){try{parent.SplashBridge.done();}catch(e){}}}</script>`
 	data = bytes.Replace(data, []byte("</body>"), []byte(shim+"</body>"), 1)
