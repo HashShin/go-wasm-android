@@ -61,7 +61,8 @@ if [ "${PERMISSION_STORAGE:-false}" = "true" ]; then
 fi
 [ "${PERMISSION_CAMERA:-false}"     = "true" ] && add_perm "CAMERA"
 [ "${PERMISSION_MICROPHONE:-false}" = "true" ] && add_perm "RECORD_AUDIO"
-[ "${PERMISSION_LOCATION:-false}"   = "true" ] && add_perm "ACCESS_FINE_LOCATION" && add_perm "ACCESS_COARSE_LOCATION"
+[ "${PERMISSION_LOCATION:-false}"     = "true" ] && add_perm "ACCESS_FINE_LOCATION" && add_perm "ACCESS_COARSE_LOCATION"
+[ "${PERMISSION_NOTIFICATION:-false}" = "true" ] && add_perm "POST_NOTIFICATIONS"
 
 # Strip old permissions, then insert fresh block before <application
 sed -i '/<uses-permission /d' "$MANIFEST"
