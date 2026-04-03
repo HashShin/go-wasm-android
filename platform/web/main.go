@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -20,10 +21,47 @@ import (
 // ── configuration ─────────────────────────────────────────────────────────────
 
 var (
-	assetsDir string // e.g. ./assets
-	golibDir  string // e.g. ./golib
-	wasmOut   string // temp wasm path served to browser
+	assetsDir string
+	golibDir  string
+	wasmOut   string
+	rootDir   string
 )
+
+// ── splash config ─────────────────────────────────────────────────────────────
+
+type splashConfig struct {
+	enabled   bool
+	bgColor   string
+	duration  int
+	animation bool
+}
+
+func loadSplashConfig() splashConfig {
+	enabled := os.Getenv("SPLASH_ENABLED")
+	cfg := splashConfig{
+		enabled:   enabled != "false",
+		bgColor:   envOr("SPLASH_BG_COLOR", "#ffffff"),
+		duration:  envInt("SPLASH_DURATION", 2000),
+		animation: os.Getenv("SPLASH_ANIMATION") != "false",
+	}
+	return cfg
+}
+
+func envOr(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
+}
+
+func envInt(key string, def int) int {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+	}
+	return def
+}
 
 // ── SSE hot-reload hub ────────────────────────────────────────────────────────
 
@@ -92,7 +130,7 @@ func buildWasm() error {
 // ── file watcher (polling) ────────────────────────────────────────────────────
 
 type watchState struct {
-	mu    sync.Mutex
+	mu     sync.Mutex
 	mtimes map[string]time.Time
 }
 
@@ -134,17 +172,23 @@ func collectFiles(dirs []string, exts []string) []string {
 func watch() {
 	ws := newWatchState()
 
-	// Seed initial state (no reload on first run)
+	// Also watch splash files
+	splashFiles := []string{
+		filepath.Join(rootDir, "app", "splash.html"),
+		filepath.Join(rootDir, "app", "splash.png"),
+		filepath.Join(rootDir, "app", "app.conf"),
+	}
+
 	goFiles := collectFiles([]string{golibDir}, []string{".go"})
 	webFiles := collectFiles([]string{assetsDir}, []string{".html", ".css", ".js"})
-	for _, f := range append(goFiles, webFiles...) {
+	for _, f := range append(append(goFiles, webFiles...), splashFiles...) {
 		ws.changed(f)
 	}
 
 	log.Println("[watch] watching for changes...")
 
 	for range time.Tick(400 * time.Millisecond) {
-		goFiles  = collectFiles([]string{golibDir}, []string{".go"})
+		goFiles = collectFiles([]string{golibDir}, []string{".go"})
 		webFiles = collectFiles([]string{assetsDir}, []string{".html", ".css", ".js"})
 
 		goChanged := false
@@ -163,6 +207,13 @@ func watch() {
 			}
 		}
 
+		for _, f := range splashFiles {
+			if ws.changed(f) {
+				log.Printf("[watch] splash changed: %s", filepath.Base(f))
+				webChanged = true
+			}
+		}
+
 		if goChanged {
 			if err := buildWasm(); err == nil {
 				hub.broadcast("go+assets")
@@ -175,7 +226,6 @@ func watch() {
 
 // ── HTTP handlers ─────────────────────────────────────────────────────────────
 
-// hotHandler is the SSE endpoint — browser connects here and waits for reload.
 func hotHandler(w http.ResponseWriter, r *http.Request) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -199,7 +249,7 @@ func hotHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// indexHandler serves index.html with the hot-reload SSE script injected.
+// indexHandler serves index.html with hot-reload and splash overlay injected.
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	data, err := os.ReadFile(filepath.Join(assetsDir, "index.html"))
 	if err != nil {
@@ -207,8 +257,16 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Inject hot-reload script just before </body>
-	const script = `<script>
+	inject := ""
+
+	// ── Splash overlay ────────────────────────────────────────────────────────
+	cfg := loadSplashConfig()
+	if cfg.enabled {
+		inject += buildSplashOverlay(cfg)
+	}
+
+	// ── Hot-reload script ─────────────────────────────────────────────────────
+	inject += `<script>
 /* dev hot-reload */
 (function(){
   function connect(){
@@ -221,13 +279,60 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 })();
 </script>
 `
-	data = bytes.Replace(data, []byte("</body>"), []byte(script+"</body>"), 1)
+	data = bytes.Replace(data, []byte("</body>"), []byte(inject+"</body>"), 1)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.Write(data)
 }
 
-// wasmHandler serves the freshly compiled app.wasm.
+// buildSplashOverlay returns the HTML/JS to inject as a splash overlay.
+func buildSplashOverlay(cfg splashConfig) string {
+	// Use splash.html body content if the file exists
+	splashHTMLPath := filepath.Join(rootDir, "app", "splash.html")
+	if data, err := os.ReadFile(splashHTMLPath); err == nil {
+		body := extractBody(string(data))
+		return fmt.Sprintf(`<div id="_splash" style="position:fixed;top:0;left:0;width:100%%;height:100%%;z-index:9999;overflow:hidden;">%s</div>
+<script>
+window.SplashBridge={done:function(){var el=document.getElementById('_splash');if(el)el.remove();}};
+setTimeout(function(){if(window.SplashBridge)SplashBridge.done();}, %d);
+</script>
+`, body, cfg.duration)
+	}
+
+	// Native-style overlay from app.conf values
+	animStyle := ""
+	if cfg.animation {
+		animStyle = `<style>
+@keyframes _splash_pop{0%{transform:scale(0.8);opacity:0}100%{transform:scale(1);opacity:1}}
+#_splash_img{animation:_splash_pop 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards;}
+</style>`
+	}
+	imgSize := envInt("SPLASH_IMAGE_SIZE", 200)
+	return fmt.Sprintf(`%s<div id="_splash" style="position:fixed;top:0;left:0;width:100%%;height:100%%;z-index:9999;background:%s;display:flex;align-items:center;justify-content:center;">
+  <img id="_splash_img" src="/splash_image.png" style="width:%dpx;height:%dpx;object-fit:contain;" onerror="this.style.display='none'" />
+</div>
+<script>
+window.SplashBridge={done:function(){var el=document.getElementById('_splash');if(el)el.remove();}};
+setTimeout(function(){SplashBridge.done();}, %d);
+</script>
+`, animStyle, cfg.bgColor, imgSize, imgSize, cfg.duration)
+}
+
+// extractBody returns the content between <body> and </body> tags.
+func extractBody(html string) string {
+	lower := strings.ToLower(html)
+	start := strings.Index(lower, "<body")
+	if start == -1 {
+		return html
+	}
+	start = strings.Index(html[start:], ">") + start + 1
+	end := strings.LastIndex(lower, "</body>")
+	if end == -1 || end <= start {
+		return html[start:]
+	}
+	return html[start:end]
+}
+
 func wasmHandler(w http.ResponseWriter, r *http.Request) {
 	wasmMu.Lock()
 	defer wasmMu.Unlock()
@@ -236,24 +341,36 @@ func wasmHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, wasmOut)
 }
 
+// splashImageHandler serves app/splash.png or app/Icon.png as splash_image.png.
+func splashImageHandler(w http.ResponseWriter, r *http.Request) {
+	for _, name := range []string{"splash.png", "Icon.png"} {
+		path := filepath.Join(rootDir, "app", name)
+		if _, err := os.Stat(path); err == nil {
+			w.Header().Set("Content-Type", "image/png")
+			w.Header().Set("Cache-Control", "no-store")
+			http.ServeFile(w, r, path)
+			return
+		}
+	}
+	http.NotFound(w, r)
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 
 func main() {
-	// Project root passed as first argument by web.sh
 	root := "."
 	if len(os.Args) > 1 {
 		root = os.Args[1]
 	}
+	rootDir   = root
 	assetsDir = filepath.Join(root, "app", "ui")
 	golibDir  = filepath.Join(root, "app", "go")
 	wasmOut   = filepath.Join(os.TempDir(), "gowebapp-dev.wasm")
 
-	// Initial WASM build
 	if err := buildWasm(); err != nil {
 		log.Fatal("initial WASM build failed — fix errors and restart")
 	}
 
-	// Copy wasm_exec.js to a temp file so we can serve it
 	wasmExecSrc := wasmExecPath()
 	wasmExecData, err := os.ReadFile(wasmExecSrc)
 	if err != nil {
@@ -263,9 +380,10 @@ func main() {
 	go watch()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/hot",           hotHandler)
-	mux.HandleFunc("/app.wasm",      wasmHandler)
-	mux.HandleFunc("/wasm_exec.js",  func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/hot",            hotHandler)
+	mux.HandleFunc("/app.wasm",       wasmHandler)
+	mux.HandleFunc("/splash_image.png", splashImageHandler)
+	mux.HandleFunc("/wasm_exec.js", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript")
 		w.Header().Set("Cache-Control", "no-store")
 		w.Write(wasmExecData)
@@ -275,7 +393,6 @@ func main() {
 			indexHandler(w, r)
 			return
 		}
-		// Serve other assets (style.css, etc.) directly from disk, no-cache
 		w.Header().Set("Cache-Control", "no-store")
 		http.ServeFile(w, r, filepath.Join(assetsDir, filepath.Clean(r.URL.Path)))
 	})
@@ -292,7 +409,6 @@ func wasmExecPath() string {
 	cmd := exec.Command("go", "env", "GOROOT")
 	out, _ := cmd.Output()
 	root := strings.TrimSpace(string(out))
-	// Go 1.21+ puts it in lib/wasm/; older versions use misc/wasm/
 	for _, rel := range []string{"lib/wasm/wasm_exec.js", "misc/wasm/wasm_exec.js"} {
 		p := filepath.Join(root, rel)
 		if _, err := os.Stat(p); err == nil {
@@ -313,9 +429,7 @@ func fileSize(path string) string {
 }
 
 func init() {
-	// Log without date prefix for cleaner output
 	log.SetFlags(0)
 }
 
-// Ensure io is used
 var _ = io.Discard
