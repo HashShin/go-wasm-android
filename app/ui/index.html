@@ -98,13 +98,25 @@
       <label>Save as</label>
       <input id="dlFilename" type="text" value="test-file.bin" placeholder="filename" />
       <label>Save folder</label>
-      <div class="row">
-        <input id="dlDir" type="text" placeholder="Download" />
-        <button onclick="doSetDir()" class="btn-secondary" style="width:auto;padding:10px 16px;white-space:nowrap">Set</button>
+      <div class="folder-select-row">
+        <span id="dlDirDisplay" class="folder-display">Download</span>
+        <button onclick="openFolderModal()" class="btn-secondary folder-select-btn">Select Folder</button>
       </div>
-      <p class="hint">Android folders: Download · Documents · Pictures · Music · Movies</p>
       <button onclick="doDownload()">Download File</button>
       <p id="dlResult" class="result"></p>
+    </div>
+
+    <!-- Folder picker bottom sheet -->
+    <div id="folderModal" class="folder-modal" onclick="closeFolderModal()">
+      <div class="folder-sheet" onclick="event.stopPropagation()">
+        <p class="folder-sheet-title">Choose Download Folder</p>
+        <button class="folder-opt" onclick="selectFolder('Download')">Download</button>
+        <button class="folder-opt" onclick="selectFolder('Documents')">Documents</button>
+        <button class="folder-opt" onclick="selectFolder('Pictures')">Pictures</button>
+        <button class="folder-opt" onclick="selectFolder('Music')">Music</button>
+        <button class="folder-opt" onclick="selectFolder('Movies')">Movies</button>
+        <button class="folder-opt btn-cancel" onclick="closeFolderModal()">Cancel</button>
+      </div>
     </div>
 
     <h2 class="section-title">HTTP Tests via Go (httpbun.com)</h2>
@@ -251,7 +263,7 @@
 
     // ── Init Android-specific defaults ───────────────────────────────────────
     if (window.AndroidDownload) {
-      document.getElementById('dlDir').value = AndroidDownload.getDownloadDir();
+      document.getElementById('dlDirDisplay').textContent = AndroidDownload.getDownloadDir();
     }
 
     // ── Storage ───────────────────────────────────────────────────────────────
@@ -379,16 +391,13 @@
     }
 
     // ── Download ──────────────────────────────────────────────────────────────
-    function doSetDir() {
-      const dir = document.getElementById('dlDir').value.trim();
-      const el  = document.getElementById('dlResult');
-      if (!dir) { el.textContent = 'Enter a folder name first'; return; }
-      if (window.AndroidDownload) {
-        AndroidDownload.setDownloadDir(dir);
-        el.textContent = 'Save folder set to: ' + dir;
-      } else {
-        el.textContent = 'Folder selection is Android only';
-      }
+    function openFolderModal()  { document.getElementById('folderModal').style.display = 'flex'; }
+    function closeFolderModal() { document.getElementById('folderModal').style.display = 'none'; }
+
+    function selectFolder(dir) {
+      document.getElementById('dlDirDisplay').textContent = dir;
+      if (window.AndroidDownload) AndroidDownload.setDownloadDir(dir);
+      closeFolderModal();
     }
 
     async function doDownload() {
