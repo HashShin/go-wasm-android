@@ -78,7 +78,7 @@ cd "$ANDROID"
 chmod +x gradlew
 
 if [ "$BUILD_TYPE" = "release" ]; then
-    if [ ! -f "$ROOT/keystore.properties" ]; then
+    if [ ! -f "$ANDROID/keystore.properties" ]; then
         echo "[build] ERROR: keystore.properties not found — run 'make keygen' first"
         exit 1
     fi

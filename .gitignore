@@ -14,6 +14,7 @@ platform/android/app/src/main/res/mipmap-*/
 # Signing keystore (keep safe, never commit)
 keystore.jks
 keystore.properties
+platform/android/keystore.properties
 
 # Web generated icons
 app/ui/favicon.ico

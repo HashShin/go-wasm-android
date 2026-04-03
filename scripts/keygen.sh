@@ -4,7 +4,7 @@ set -e
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 KEYSTORE="$ROOT/keystore.jks"
-PROPS="$ROOT/keystore.properties"
+PROPS="$ROOT/platform/android/keystore.properties"
 
 if [ -f "$KEYSTORE" ]; then
     echo "keystore.jks already exists. Delete it first to regenerate."
@@ -39,7 +39,7 @@ keytool -genkeypair \
     -noprompt
 
 cat > "$PROPS" << EOF
-storeFile=../../keystore.jks
+storeFile=$KEYSTORE
 storePassword=$STORE_PASS
 keyAlias=$KEY_ALIAS
 keyPassword=$STORE_PASS
