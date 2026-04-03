@@ -24,7 +24,7 @@ clean:
 
 # ── Dev web server ────────────────────────────────────────────────────────────
 web:
-	bash scripts/web.sh
+	bash scripts/web.sh $(if $(PORT),-p $(PORT)) $(if $(HOST),-H $(HOST))
 
 # ── Icons ─────────────────────────────────────────────────────────────────────
 icons:
