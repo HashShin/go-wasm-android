@@ -90,6 +90,23 @@
       <p id="notifResult" class="result"></p>
     </div>
 
+    <h2 class="section-title">Download</h2>
+
+    <div class="card">
+      <label>File URL</label>
+      <input id="dlUrl" type="text" value="https://httpbun.com/bytes/10240" placeholder="URL to download" />
+      <label>Save as</label>
+      <input id="dlFilename" type="text" value="test-file.bin" placeholder="filename" />
+      <label>Save folder</label>
+      <div class="row">
+        <input id="dlDir" type="text" placeholder="Download" />
+        <button onclick="doSetDir()" class="btn-secondary" style="width:auto;padding:10px 16px;white-space:nowrap">Set</button>
+      </div>
+      <p class="hint">Android folders: Download · Documents · Pictures · Music · Movies</p>
+      <button onclick="doDownload()">Download File</button>
+      <p id="dlResult" class="result"></p>
+    </div>
+
     <h2 class="section-title">HTTP Tests via Go (httpbun.com)</h2>
 
     <div class="card">
@@ -232,6 +249,11 @@
       }
     }
 
+    // ── Init Android-specific defaults ───────────────────────────────────────
+    if (window.AndroidDownload) {
+      document.getElementById('dlDir').value = AndroidDownload.getDownloadDir();
+    }
+
     // ── Storage ───────────────────────────────────────────────────────────────
     function doWriteFile() {
       const content = 'Test write at ' + new Date().toISOString();
@@ -354,6 +376,46 @@
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
+    }
+
+    // ── Download ──────────────────────────────────────────────────────────────
+    function doSetDir() {
+      const dir = document.getElementById('dlDir').value.trim();
+      const el  = document.getElementById('dlResult');
+      if (!dir) { el.textContent = 'Enter a folder name first'; return; }
+      if (window.AndroidDownload) {
+        AndroidDownload.setDownloadDir(dir);
+        el.textContent = 'Save folder set to: ' + dir;
+      } else {
+        el.textContent = 'Folder selection is Android only';
+      }
+    }
+
+    async function doDownload() {
+      const url      = document.getElementById('dlUrl').value.trim();
+      const filename = document.getElementById('dlFilename').value.trim() || 'download';
+      const el       = document.getElementById('dlResult');
+      if (!url) { el.textContent = 'Enter a URL first'; return; }
+
+      if (window.AndroidDownload) {
+        el.textContent = AndroidDownload.download(url, filename);
+      } else {
+        // Browser fallback — fetch then trigger save dialog
+        el.textContent = 'Downloading…';
+        try {
+          const resp = await fetch(url);
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
+          const blob = await resp.blob();
+          const a    = document.createElement('a');
+          a.href     = URL.createObjectURL(blob);
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(a.href);
+          el.textContent = 'Saved: ' + filename + ' (' + (blob.size / 1024).toFixed(1) + ' KB)';
+        } catch (e) {
+          el.textContent = 'Error: ' + e.message;
+        }
+      }
     }
 
     async function doNotify() {

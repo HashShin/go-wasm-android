@@ -81,6 +81,15 @@ sed -i "s|versionCode [0-9]*|versionCode $VERSION_CODE|" \
 sed -i "s|versionName \".*\"|versionName \"$VERSION\"|" \
     "$ANDROID/app/build.gradle"
 
+# ── 1a. Generate download config resource ────────────────────────────────────
+mkdir -p "$ANDROID/app/src/main/res/values"
+cat > "$ANDROID/app/src/main/res/values/download_config.xml" << EOF
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="default_download_dir">${DOWNLOAD_DIR:-Download}</string>
+</resources>
+EOF
+
 # ── 1. Generate splash.xml resource ──────────────────────────────────────────
 mkdir -p "$ANDROID/app/src/main/res/values"
 cat > "$ANDROID/app/src/main/res/values/splash.xml" << EOF
