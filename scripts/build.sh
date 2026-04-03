@@ -113,7 +113,7 @@ mkdir -p "$ASSETS_DST"
 
 GOOS=js GOARCH=wasm go build \
     -o "$ASSETS_DST/app.wasm" \
-    "$GOLIB/main.go"
+    "$GOLIB"
 
 WASM_SIZE=$(du -sh "$ASSETS_DST/app.wasm" | cut -f1)
 log "app.wasm built (${WASM_SIZE})"
