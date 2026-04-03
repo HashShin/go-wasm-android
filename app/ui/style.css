@@ -15,8 +15,8 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #f0f4f8;
-  color: #2d3748;
+  background: #0f1117;
+  color: #e2e8f0;
   padding: 16px;
 }
 
@@ -29,7 +29,7 @@ body {
   font-size: 1.8rem;
   font-weight: 700;
   text-align: center;
-  color: #1a202c;
+  color: #f7fafc;
   margin-top: 24px;
 }
 
@@ -45,21 +45,21 @@ body {
   font-size: 0.75rem;
   font-weight: 600;
   color: #fff;
-  background: #667eea;
-  display: inline-block;
+  background: #5a67d8;
+  display: block;
   padding: 2px 12px;
   border-radius: 999px;
   margin: 0 auto 20px;
   width: fit-content;
-  display: block;
 }
 
 .card {
-  background: #fff;
+  background: #1a1d27;
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #2d3148;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
 }
 
 .card label {
@@ -67,18 +67,20 @@ body {
   font-weight: 600;
   margin-bottom: 8px;
   font-size: 0.9rem;
-  color: #4a5568;
+  color: #a0aec0;
 }
 
 .card input[type="text"],
 .card input[type="number"] {
   width: 100%;
   padding: 10px 12px;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid #2d3148;
   border-radius: 8px;
   font-size: 1rem;
   outline: none;
   margin-bottom: 10px;
+  background: #0f1117;
+  color: #e2e8f0;
   transition: border-color 0.2s;
 }
 
@@ -106,7 +108,7 @@ body {
 button {
   width: 100%;
   padding: 12px;
-  background: #667eea;
+  background: #5a67d8;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -117,18 +119,19 @@ button {
 }
 
 button:active {
-  background: #5a67d8;
+  background: #4c56c0;
 }
 
 .result {
   margin-top: 10px;
   padding: 10px;
-  background: #edf2f7;
+  background: #0f1117;
   border-radius: 6px;
   font-size: 0.9rem;
   min-height: 36px;
-  color: #2d3748;
+  color: #cbd5e0;
   word-break: break-all;
+  border: 1px solid #2d3148;
 }
 
 .result-pre {
@@ -143,7 +146,7 @@ button:active {
 .section-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #4a5568;
+  color: #718096;
   margin: 8px 0 12px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -151,20 +154,22 @@ button:active {
 
 .hint {
   font-size: 0.78rem;
-  color: #a0aec0;
+  color: #4a5568;
   margin-bottom: 8px;
 }
 
 textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid #2d3148;
   border-radius: 8px;
   font-family: 'Courier New', monospace;
   font-size: 0.82rem;
   resize: vertical;
   outline: none;
   margin-bottom: 10px;
+  background: #0f1117;
+  color: #e2e8f0;
   transition: border-color 0.2s;
 }
 
@@ -183,8 +188,8 @@ textarea:focus {
   text-align: center;
 }
 
-.status-ok  { background: #c6f6d5; color: #276749; }
-.status-err { background: #fed7d7; color: #9b2c2c; }
+.status-ok  { background: #1c4532; color: #9ae6b4; }
+.status-err { background: #4a1c1c; color: #fc8181; }
 
 .btn-row {
   display: flex;
@@ -196,11 +201,11 @@ textarea:focus {
   margin-bottom: 0;
 }
 .btn-secondary {
-  background: #e2e8f0 !important;
-  color: #4a5568 !important;
+  background: #2d3148 !important;
+  color: #a0aec0 !important;
 }
 .btn-secondary:active {
-  background: #cbd5e0 !important;
+  background: #3a3f5c !important;
 }
 
 #cameraStream {
@@ -212,7 +217,7 @@ textarea:focus {
 }
 
 .volume-track {
-  background: #e2e8f0;
+  background: #2d3148;
   border-radius: 4px;
   height: 14px;
   margin: 10px 0 4px;
