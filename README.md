@@ -102,8 +102,7 @@ Edit `app/app.conf` — all settings are applied automatically on every build:
 ```bash
 APP_NAME="My App"
 APP_ID="com.example.myapp"
-VERSION_CODE=1
-VERSION_NAME="1.0"
+VERSION="1.0"
 
 # Splash screen
 SPLASH_ENABLED=true       # false to disable entirely

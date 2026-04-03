@@ -17,7 +17,8 @@ log() { echo "[build] $*"; }
 
 # ── 0. Load app config ────────────────────────────────────────────────────────
 source "$ROOT/app/app.conf"
-log "App: $APP_NAME ($APP_ID) v$VERSION_NAME ($VERSION_CODE)"
+VERSION_CODE=$(echo "$VERSION" | tr -d '.')
+log "App: $APP_NAME ($APP_ID) v$VERSION (code $VERSION_CODE)"
 
 # Apply config to Android files
 sed -i "s|<string name=\"app_name\">.*</string>|<string name=\"app_name\">$APP_NAME</string>|" \
@@ -28,7 +29,7 @@ sed -i "s|namespace '.*'|namespace '$APP_ID'|" \
     "$ANDROID/app/build.gradle"
 sed -i "s|versionCode [0-9]*|versionCode $VERSION_CODE|" \
     "$ANDROID/app/build.gradle"
-sed -i "s|versionName \".*\"|versionName \"$VERSION_NAME\"|" \
+sed -i "s|versionName \".*\"|versionName \"$VERSION\"|" \
     "$ANDROID/app/build.gradle"
 
 # ── 1. Generate splash.xml resource ──────────────────────────────────────────
