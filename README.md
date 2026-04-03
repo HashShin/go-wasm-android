@@ -73,10 +73,15 @@ curl -fsSL https://raw.githubusercontent.com/HashShin/go-wasm-android/main/insta
 ## Build
 
 ```bash
-make apk
+make apk        # debug APK  → builds/app-debug.apk
+make release    # release APK → builds/app-release.apk
 ```
 
-Output: `builds/app-debug.apk`
+For release builds, generate a signing keystore first (one time):
+
+```bash
+make keygen
+```
 
 ---
 
@@ -92,13 +97,21 @@ make web
 
 ## Customise
 
+Edit `app.conf` to change the app name, ID, and version — applied automatically on every build:
+
+```bash
+APP_NAME="My App"
+APP_ID="com.example.myapp"
+VERSION_CODE=1
+VERSION_NAME="1.0"
+```
+
 | File | What to change |
 |------|---------------|
 | `app/go/main.go` | Go logic — functions exposed to the frontend |
 | `app/ui/index.html` | UI markup |
 | `app/ui/style.css` | Styles |
 | `app/Icon.png` | App icon — run `make icons` to regenerate all sizes |
-| `platform/android/app/build.gradle` | App ID, SDK versions |
 
 ---
 

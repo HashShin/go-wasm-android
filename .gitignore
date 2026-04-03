@@ -11,12 +11,9 @@ platform/android/local.properties
 platform/android/app/src/main/assets/
 platform/android/app/src/main/res/mipmap-*/
 
-# Desktop build artifacts
-platform/desktop/assets/
-platform/desktop/icon.png
-platform/desktop/icon.ico
-platform/desktop/resource.rc
-platform/desktop/resource.syso
+# Signing keystore (keep safe, never commit)
+keystore.jks
+keystore.properties
 
 # Web generated icons
 app/ui/favicon.ico
