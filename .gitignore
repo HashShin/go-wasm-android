@@ -25,3 +25,5 @@ app/ui/favicon.png
 
 # Temp
 *.wasm
+*.jpg
+platform/genicons/genicons
