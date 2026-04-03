@@ -87,10 +87,12 @@ make keygen
 
 ## Development
 
-Start the hot-reload dev server and open `http://127.0.0.1:7000` in a browser. Changes to Go, HTML, or CSS are picked up automatically.
+Start the hot-reload dev server and open it in a browser. Changes to Go, HTML, or CSS are picked up automatically.
 
 ```bash
-make web
+make web                         # http://127.0.0.1:7000
+make web PORT=9000               # custom port
+make web HOST=0.0.0.0 PORT=8080  # expose on network
 ```
 
 ---
