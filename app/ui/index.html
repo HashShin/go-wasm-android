@@ -177,6 +177,11 @@
       initWasm().catch(console.error);
     }
 
+    // Register service worker for showNotification() support (HTTP/HTTPS only)
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+
     async function doGreet() {
       const name = document.getElementById('nameInput').value || 'World';
       document.getElementById('greetResult').textContent = await GoApp.greet(name);
@@ -372,12 +377,18 @@
         const perm = Notification.permission === 'default'
           ? await Notification.requestPermission()
           : Notification.permission;
-        if (perm === 'granted') {
-          new Notification(title, { body });
-          el.textContent = 'Notification sent!';
-        } else {
+        if (perm !== 'granted') {
           el.textContent = 'Permission denied — allow notifications in your browser settings';
+          return;
         }
+        // Mobile Chrome requires ServiceWorker.showNotification(); fall back to new Notification()
+        if ('serviceWorker' in navigator) {
+          const reg = await navigator.serviceWorker.ready;
+          await reg.showNotification(title, { body });
+        } else {
+          new Notification(title, { body });
+        }
+        el.textContent = 'Notification sent!';
       } catch (e) {
         el.textContent = 'Error: ' + e.message;
       }

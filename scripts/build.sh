@@ -118,6 +118,7 @@ log "wasm_exec.js copied"
 # ── 4. Copy HTML/CSS assets ───────────────────────────────────────────────────
 cp "$ASSETS_SRC/index.html" "$ASSETS_DST/"
 cp "$ASSETS_SRC/style.css"  "$ASSETS_DST/"
+[ -f "$ASSETS_SRC/sw.js" ] && cp "$ASSETS_SRC/sw.js" "$ASSETS_DST/"
 # Splash image: use app/splash.png if present, otherwise fall back to app/Icon.png
 DRAWABLE_DST="$ANDROID/app/src/main/res/drawable"
 mkdir -p "$DRAWABLE_DST"
