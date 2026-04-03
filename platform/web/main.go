@@ -287,16 +287,17 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 // buildSplashOverlay returns the HTML/JS to inject as a splash overlay.
 func buildSplashOverlay(cfg splashConfig) string {
-	// Use splash.html body content if the file exists
-	splashHTMLPath := filepath.Join(rootDir, "app", "splash.html")
-	if data, err := os.ReadFile(splashHTMLPath); err == nil {
-		body := extractBody(string(data))
-		return fmt.Sprintf(`<div id="_splash" style="position:fixed;top:0;left:0;width:100%%;height:100%%;z-index:9999;overflow:hidden;">%s</div>
-<script>
+	dismiss := fmt.Sprintf(`<script>
 window.SplashBridge={done:function(){var el=document.getElementById('_splash');if(el)el.remove();}};
-setTimeout(function(){if(window.SplashBridge)SplashBridge.done();}, %d);
-</script>
-`, body, cfg.duration)
+setTimeout(function(){SplashBridge.done();}, %d);
+</script>`, cfg.duration)
+
+	// Use an iframe if splash.html exists — renders it fully self-contained
+	splashHTMLPath := filepath.Join(rootDir, "app", "splash.html")
+	if _, err := os.Stat(splashHTMLPath); err == nil {
+		return fmt.Sprintf(`<div id="_splash" style="position:fixed;top:0;left:0;width:100%%;height:100%%;z-index:9999;">
+<iframe src="/splash.html" style="width:100%%;height:100%%;border:none;display:block;"></iframe>
+</div>%s`, dismiss)
 	}
 
 	// Native-style overlay from app.conf values
@@ -309,28 +310,8 @@ setTimeout(function(){if(window.SplashBridge)SplashBridge.done();}, %d);
 	}
 	imgSize := envInt("SPLASH_IMAGE_SIZE", 200)
 	return fmt.Sprintf(`%s<div id="_splash" style="position:fixed;top:0;left:0;width:100%%;height:100%%;z-index:9999;background:%s;display:flex;align-items:center;justify-content:center;">
-  <img id="_splash_img" src="/splash_image.png" style="width:%dpx;height:%dpx;object-fit:contain;" onerror="this.style.display='none'" />
-</div>
-<script>
-window.SplashBridge={done:function(){var el=document.getElementById('_splash');if(el)el.remove();}};
-setTimeout(function(){SplashBridge.done();}, %d);
-</script>
-`, animStyle, cfg.bgColor, imgSize, imgSize, cfg.duration)
-}
-
-// extractBody returns the content between <body> and </body> tags.
-func extractBody(html string) string {
-	lower := strings.ToLower(html)
-	start := strings.Index(lower, "<body")
-	if start == -1 {
-		return html
-	}
-	start = strings.Index(html[start:], ">") + start + 1
-	end := strings.LastIndex(lower, "</body>")
-	if end == -1 || end <= start {
-		return html[start:]
-	}
-	return html[start:end]
+<img id="_splash_img" src="/splash_image.png" style="width:%dpx;height:%dpx;object-fit:contain;" onerror="this.style.display='none'" />
+</div>%s`, animStyle, cfg.bgColor, imgSize, imgSize, dismiss)
 }
 
 func wasmHandler(w http.ResponseWriter, r *http.Request) {
@@ -339,6 +320,22 @@ func wasmHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/wasm")
 	w.Header().Set("Cache-Control", "no-store")
 	http.ServeFile(w, r, wasmOut)
+}
+
+// splashHTMLHandler serves app/splash.html with a SplashBridge shim injected.
+func splashHTMLHandler(w http.ResponseWriter, r *http.Request) {
+	path := filepath.Join(rootDir, "app", "splash.html")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	// Shim: SplashBridge.done() inside the iframe calls parent.SplashBridge.done()
+	shim := `<script>window.SplashBridge={done:function(){try{parent.SplashBridge.done();}catch(e){}}}</script>`
+	data = bytes.Replace(data, []byte("</body>"), []byte(shim+"</body>"), 1)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.Write(data)
 }
 
 // splashImageHandler serves app/splash.png or app/Icon.png as splash_image.png.
@@ -380,8 +377,9 @@ func main() {
 	go watch()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/hot",            hotHandler)
-	mux.HandleFunc("/app.wasm",       wasmHandler)
+	mux.HandleFunc("/hot",              hotHandler)
+	mux.HandleFunc("/app.wasm",         wasmHandler)
+	mux.HandleFunc("/splash.html",      splashHTMLHandler)
 	mux.HandleFunc("/splash_image.png", splashImageHandler)
 	mux.HandleFunc("/wasm_exec.js", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript")
