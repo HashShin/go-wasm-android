@@ -24,8 +24,11 @@ public class NotificationBridge {
     public void show(String title, String body) {
         NotificationManager nm = (NotificationManager)
             context.getSystemService(Context.NOTIFICATION_SERVICE);
+        int icon = context.getResources().getIdentifier(
+            "notification_icon", "drawable", context.getPackageName());
+        if (icon == 0) icon = android.R.drawable.ic_popup_reminder;
         Notification notif = new Notification.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_popup_reminder)
+            .setSmallIcon(icon)
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)

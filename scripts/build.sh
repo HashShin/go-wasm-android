@@ -131,6 +131,14 @@ elif [ -f "$ROOT/app/Icon.png" ]; then
     log "Splash image: app/Icon.png (fallback)"
 fi
 [ -f "$ROOT/app/splash.html" ] && cp "$ROOT/app/splash.html" "$ASSETS_DST/" && log "splash.html copied"
+# Notification icon: use app/notification_icon.png if present, otherwise fall back to app/Icon.png
+if [ -f "$ROOT/app/notification_icon.png" ]; then
+    cp "$ROOT/app/notification_icon.png" "$DRAWABLE_DST/notification_icon.png"
+    log "Notification icon: app/notification_icon.png"
+elif [ -f "$ROOT/app/Icon.png" ]; then
+    cp "$ROOT/app/Icon.png" "$DRAWABLE_DST/notification_icon.png"
+    log "Notification icon: app/Icon.png (fallback)"
+fi
 log "HTML/CSS assets copied"
 
 # ── 5. ARM64: native aapt2 override ──────────────────────────────────────────
