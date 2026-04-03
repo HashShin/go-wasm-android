@@ -10,6 +10,9 @@ ASSETS_DST="$ROOT/platform/android/app/src/main/assets"
 ANDROID="$ROOT/platform/android"
 BUILD_TYPE="${1:-debug}"
 
+command -v go   &>/dev/null || { echo "ERROR: Go not found — run 'make setup' first"; exit 1; }
+command -v java &>/dev/null || { echo "ERROR: Java not found — run 'make setup' first"; exit 1; }
+
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/android-sdk}"
 export PATH="$PATH:$(go env GOPATH)/bin"
 

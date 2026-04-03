@@ -6,8 +6,9 @@
 set -e
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$ROOT"  # platform/web/main.go uses paths relative to project root
+cd "$ROOT"
 
+command -v go &>/dev/null || { echo "ERROR: Go not found — run 'make setup' first"; exit 1; }
 export PATH="$PATH:$(go env GOPATH)/bin"
 
 # Export splash config so the web server can inject it
