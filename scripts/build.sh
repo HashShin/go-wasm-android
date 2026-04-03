@@ -25,6 +25,49 @@ source "$ROOT/app/app.conf"
 VERSION_CODE=$(echo "$VERSION" | tr -d '.')
 log "App: $APP_NAME ($APP_ID) v$VERSION (code $VERSION_CODE)"
 
+# ── 0b. Sync Java package with APP_ID ────────────────────────────────────────
+JAVA_SRC="$ANDROID/app/src/main/java"
+NEW_PKG="$APP_ID"
+NEW_PKG_DIR="$JAVA_SRC/$(echo "$NEW_PKG" | tr '.' '/')"
+
+# Detect current package from existing directory structure
+CURRENT_PKG_DIR=$(find "$JAVA_SRC" -name "MainActivity.java" -type f 2>/dev/null | head -1 | xargs dirname 2>/dev/null)
+if [ -n "$CURRENT_PKG_DIR" ]; then
+    CURRENT_PKG=$(head -1 "$CURRENT_PKG_DIR/MainActivity.java" | sed 's/^package //;s/;//')
+    if [ "$CURRENT_PKG" != "$NEW_PKG" ]; then
+        log "Package rename: $CURRENT_PKG → $NEW_PKG"
+        # Move source files to new directory
+        mkdir -p "$NEW_PKG_DIR"
+        for f in "$CURRENT_PKG_DIR"/*.java; do
+            sed -i "s|^package $CURRENT_PKG;|package $NEW_PKG;|" "$f"
+            mv "$f" "$NEW_PKG_DIR/"
+        done
+        # Remove old (now empty) package directories
+        OLD_ROOT="$JAVA_SRC/$(echo "$CURRENT_PKG" | cut -d. -f1)"
+        rm -rf "$OLD_ROOT"
+        log "Java sources moved to $NEW_PKG_DIR"
+    fi
+fi
+
+# ── 0c. Inject permissions into AndroidManifest.xml ──────────────────────────
+MANIFEST="$ANDROID/app/src/main/AndroidManifest.xml"
+PERMS=""
+add_perm() { PERMS="${PERMS}    <uses-permission android:name=\"android.permission.$1\" />\n"; }
+
+[ "${PERMISSION_INTERNET:-true}"    = "true" ] && add_perm "INTERNET"
+if [ "${PERMISSION_STORAGE:-false}" = "true" ]; then
+    add_perm "READ_EXTERNAL_STORAGE"
+    add_perm "WRITE_EXTERNAL_STORAGE"
+fi
+[ "${PERMISSION_CAMERA:-false}"     = "true" ] && add_perm "CAMERA"
+[ "${PERMISSION_MICROPHONE:-false}" = "true" ] && add_perm "RECORD_AUDIO"
+[ "${PERMISSION_LOCATION:-false}"   = "true" ] && add_perm "ACCESS_FINE_LOCATION" && add_perm "ACCESS_COARSE_LOCATION"
+
+# Strip old permissions, then insert fresh block before <application
+sed -i '/<uses-permission /d' "$MANIFEST"
+sed -i "s|    <application|${PERMS}    <application|" "$MANIFEST"
+log "Permissions injected into AndroidManifest.xml"
+
 # Apply config to Android files
 sed -i "s|<string name=\"app_name\">.*</string>|<string name=\"app_name\">$APP_NAME</string>|" \
     "$ANDROID/app/src/main/res/values/strings.xml"
