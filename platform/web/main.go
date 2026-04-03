@@ -288,7 +288,13 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 // buildSplashOverlay returns the HTML/JS to inject as a splash overlay.
 func buildSplashOverlay(cfg splashConfig) string {
 	dismiss := fmt.Sprintf(`<script>
-window.SplashBridge={done:function(){var el=document.getElementById('_splash');if(el)el.remove();}};
+window.SplashBridge={done:function(){
+  var el=document.getElementById('_splash');
+  if(!el)return;
+  el.style.transition='opacity 0.3s ease';
+  el.style.opacity='0';
+  setTimeout(function(){if(el)el.remove();},300);
+}};
 setTimeout(function(){SplashBridge.done();}, %d);
 </script>`, cfg.duration)
 

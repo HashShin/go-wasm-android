@@ -37,13 +37,11 @@ public class SplashActivity extends Activity {
         s.setJavaScriptEnabled(true);
         s.setAllowFileAccessFromFileURLs(true);
 
-        // JS bridge: splash.html can call SplashBridge.done() to dismiss early
         webView.addJavascriptInterface(new SplashBridge(), "SplashBridge");
         setContentView(webView);
         webView.loadUrl("file:///android_asset/splash.html");
 
-        // Timer fallback in case splash.html never calls SplashBridge.done()
-        dismissTask = this::finish;
+        dismissTask = this::dismiss;
         handler.postDelayed(dismissTask, duration);
     }
 
@@ -58,7 +56,14 @@ public class SplashActivity extends Activity {
             icon.startAnimation(anim);
         }
 
-        handler.postDelayed(this::finish, duration);
+        handler.postDelayed(this::dismiss, duration);
+    }
+
+    // ── Dismiss with fade-out transition ──────────────────────────────────────
+
+    private void dismiss() {
+        finish();
+        overridePendingTransition(0, R.anim.splash_out);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -76,7 +81,7 @@ public class SplashActivity extends Activity {
         @JavascriptInterface
         public void done() {
             handler.removeCallbacks(dismissTask);
-            runOnUiThread(() -> finish());
+            runOnUiThread(() -> dismiss());
         }
     }
 
