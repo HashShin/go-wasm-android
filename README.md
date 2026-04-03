@@ -54,16 +54,13 @@ scripts/
 
 ### Android device (native Termux)
 
-Install [Termux](https://f-droid.org/packages/com.termux/) from F-Droid, then:
+Install [Termux](https://f-droid.org/packages/com.termux/) from F-Droid, then run this one-liner:
 
 ```bash
-pkg install git
-git clone https://github.com/HashShin/go-wasm-android
-cd go-wasm-android
-bash scripts/setup.sh
+curl -fsSL https://raw.githubusercontent.com/HashShin/go-wasm-android/main/install.sh | bash
 ```
 
-`setup.sh` will automatically install Go, Java, aapt2, zipalign, and the Android SDK via `pkg`. No PRoot or Linux emulation needed — this runs in native Termux.
+Installs Go, Java, aapt2, zipalign, and the Android SDK automatically via `pkg`. No PRoot or Linux emulation needed.
 
 ### Linux (Ubuntu / Debian)
 
