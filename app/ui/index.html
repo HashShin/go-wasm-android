@@ -268,7 +268,9 @@
         video.style.display = 'block';
         el.textContent = 'Camera active';
       } catch (e) {
-        el.textContent = 'Error: ' + e.message;
+        if (e.name === 'NotAllowedError')  el.textContent = 'Permission denied — allow camera in your browser or app settings';
+        else if (e.name === 'NotFoundError') el.textContent = 'No camera found on this device';
+        else el.textContent = 'Error: ' + e.message;
       }
     }
 
@@ -311,7 +313,9 @@
           }
           tick();
         } catch (e) {
-          el.textContent = 'Error: ' + e.message;
+          if (e.name === 'NotAllowedError')   el.textContent = 'Permission denied — allow microphone in your browser or app settings';
+          else if (e.name === 'NotReadableError') el.textContent = 'Microphone in use by another app';
+          else el.textContent = 'Error: ' + e.message;
         }
       }
     }
@@ -329,16 +333,27 @@
     // ── Location ──────────────────────────────────────────────────────────────
     function doLocation() {
       const el = document.getElementById('locationResult');
+      if (!navigator.geolocation) {
+        el.textContent = 'Geolocation not available — requires HTTPS or localhost';
+        return;
+      }
       el.textContent = 'Getting location…';
       navigator.geolocation.getCurrentPosition(
         pos => {
           const c = pos.coords;
           el.textContent =
-            'Lat: ' + c.latitude.toFixed(6) + '\n' +
-            'Lng: ' + c.longitude.toFixed(6) + '\n' +
-            'Accuracy: ' + c.accuracy.toFixed(0) + 'm';
+            'Lat: '      + c.latitude.toFixed(6)  + '\n' +
+            'Lng: '      + c.longitude.toFixed(6) + '\n' +
+            'Accuracy: ' + c.accuracy.toFixed(0)  + 'm';
         },
-        err => { el.textContent = 'Error: ' + err.message; },
+        err => {
+          const msgs = {
+            1: 'Permission denied — allow location in your browser or app settings',
+            2: 'Location unavailable — check GPS or network connection',
+            3: 'Timed out — move to an open area and try again',
+          };
+          el.textContent = msgs[err.code] || 'Error: ' + err.message;
+        },
         { enableHighAccuracy: true, timeout: 10000 }
       );
     }
@@ -351,7 +366,14 @@
         await GoApp.notify(title, body);
         el.textContent = 'Notification sent!';
       } catch (err) {
-        el.textContent = 'Error: ' + err;
+        const s = String(err);
+        if (s.includes('permission denied')) {
+          el.textContent = 'Permission denied — allow notifications in your browser or app settings';
+        } else if (s.includes('not supported')) {
+          el.textContent = 'Notifications not supported — requires HTTPS or localhost';
+        } else {
+          el.textContent = 'Error: ' + s;
+        }
       }
     }
 
