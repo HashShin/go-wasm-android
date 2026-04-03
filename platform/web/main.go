@@ -114,7 +114,8 @@ func buildWasm() error {
 	defer wasmMu.Unlock()
 
 	log.Println("[wasm] compiling...")
-	cmd := exec.Command("go", "build", "-o", wasmOut, golibDir)
+	mainFile := filepath.Join(golibDir, "main.go")
+	cmd := exec.Command("go", "build", "-o", wasmOut, mainFile)
 	cmd.Env = append(os.Environ(), "GOOS=js", "GOARCH=wasm")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
