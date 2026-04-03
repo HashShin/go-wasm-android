@@ -9,10 +9,6 @@
   <link rel="icon" type="image/png"    href="favicon.png" sizes="32x32" />
 </head>
 <body>
-  <div id="loading" class="loading-screen">
-    <p>Loading Go runtime…</p>
-  </div>
-
   <div id="app" class="container" style="display:none">
     <h1 class="title">Go + HTML App</h1>
     <p id="modeTag" class="mode-tag"></p>
@@ -77,19 +73,14 @@
 
   <script src="wasm_exec.js" onerror="window._noWasm=true"></script>
   <script>
-    // ── Mode detection ──────────────────────────────────────────────────────
-    // file://  → APK mode: load app.wasm, GoApp.* are sync values
-    // http://  → Desktop mode: GoApp.* are fetch()-based Promises
-    // await works for both: await "string" === "string"
     const IS_DESKTOP = location.protocol === 'http:' || location.protocol === 'https:';
 
     function showApp(mode) {
       document.getElementById('modeTag').textContent = mode;
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('app').style.display   = 'block';
+      const app = document.getElementById('app');
+      app.style.display = 'block';
     }
 
-    // ── Desktop shim: maps GoApp.* → fetch /api/* ───────────────────────────
     async function api(path, params) {
       const qs = params ? '?' + new URLSearchParams(params).toString() : '';
       const r = await fetch(path + qs);
@@ -118,7 +109,6 @@
       showApp('Desktop (Go HTTP server)');
     }
 
-    // ── WASM loader (APK / file://) ─────────────────────────────────────────
     async function initWasm() {
       const go = new Go();
       const buf = await new Promise((resolve, reject) => {
@@ -134,16 +124,12 @@
       showApp('Android APK (Go WASM)');
     }
 
-    // ── Bootstrap ────────────────────────────────────────────────────────────
     if (IS_DESKTOP) {
       setupDesktopShim();
     } else {
-      initWasm().catch(err => {
-        document.getElementById('loading').textContent = 'Failed to load WASM: ' + err;
-      });
+      initWasm().catch(console.error);
     }
 
-    // ── UI handlers — all use await so they work in both modes ───────────────
     async function doGreet() {
       const name = document.getElementById('nameInput').value || 'World';
       document.getElementById('greetResult').textContent = await GoApp.greet(name);

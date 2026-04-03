@@ -1,7 +1,6 @@
 package com.gowebapp.app;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.animation.Animation;
@@ -13,12 +12,6 @@ public class SplashActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        if (!getResources().getBoolean(R.bool.splash_enabled)) {
-            launch();
-            return;
-        }
-
         setContentView(R.layout.activity_splash);
 
         if (getResources().getBoolean(R.bool.splash_animation)) {
@@ -28,11 +21,6 @@ public class SplashActivity extends Activity {
         }
 
         int duration = getResources().getInteger(R.integer.splash_duration);
-        new Handler().postDelayed(this::launch, duration);
-    }
-
-    private void launch() {
-        startActivity(new Intent(this, MainActivity.class));
-        finish();
+        new Handler().postDelayed(this::finish, duration);
     }
 }

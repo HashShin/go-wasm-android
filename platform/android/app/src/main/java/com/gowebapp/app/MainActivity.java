@@ -1,6 +1,7 @@
 package com.gowebapp.app;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -19,15 +20,19 @@ public class MainActivity extends Activity {
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
-        // Allow the file:// page to load app.wasm and wasm_exec.js via XHR
         settings.setAllowFileAccessFromFileURLs(true);
         settings.setAllowUniversalAccessFromFileURLs(true);
         settings.setDomStorageEnabled(true);
 
         webView.setWebViewClient(new WebViewClient());
 
-        // index.html loads wasm_exec.js + app.wasm from the same assets folder
+        // Start loading immediately — runs in background while splash shows
         webView.loadUrl("file:///android_asset/index.html");
+
+        // Launch splash on top if enabled (splash covers us while WASM loads)
+        if (getResources().getBoolean(R.bool.splash_enabled)) {
+            startActivity(new Intent(this, SplashActivity.class));
+        }
     }
 
     @Override
