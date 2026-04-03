@@ -65,9 +65,7 @@ Installs Go, Java, aapt2, zipalign, and the Android SDK automatically via `pkg`.
 ### Linux (Ubuntu / Debian)
 
 ```bash
-git clone https://github.com/HashShin/go-wasm-android
-cd go-wasm-android
-bash scripts/setup.sh
+curl -fsSL https://raw.githubusercontent.com/HashShin/go-wasm-android/main/install.sh | bash
 ```
 
 ---
