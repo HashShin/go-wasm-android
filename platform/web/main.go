@@ -406,7 +406,9 @@ func main() {
 		http.ServeFile(w, r, filepath.Join(assetsDir, filepath.Clean(r.URL.Path)))
 	})
 
-	addr := "127.0.0.1:7000"
+	host := envOr("DEV_HOST", "127.0.0.1")
+	port := envOr("DEV_PORT", "7000")
+	addr := host + ":" + port
 	log.Printf("[dev] http://%s  (hot reload enabled)", addr)
 	log.Printf("[dev] edit app/ui/ or app/go/ — browser refreshes automatically")
 	log.Fatal(http.ListenAndServe(addr, mux))
