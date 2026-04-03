@@ -83,13 +83,6 @@ make apk
 
 Output: `builds/app-debug.apk`
 
-### Install and run on a connected device
-
-```bash
-make install   # adb install
-make run       # install + launch + logcat
-```
-
 ---
 
 ## Development
