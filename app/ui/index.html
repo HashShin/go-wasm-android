@@ -106,18 +106,6 @@
       <p id="dlResult" class="result"></p>
     </div>
 
-    <!-- Folder picker bottom sheet -->
-    <div id="folderModal" class="folder-modal" onclick="closeFolderModal()">
-      <div class="folder-sheet" onclick="event.stopPropagation()">
-        <p class="folder-sheet-title">Choose Download Folder</p>
-        <button class="folder-opt" onclick="selectFolder('Download')">Download</button>
-        <button class="folder-opt" onclick="selectFolder('Documents')">Documents</button>
-        <button class="folder-opt" onclick="selectFolder('Pictures')">Pictures</button>
-        <button class="folder-opt" onclick="selectFolder('Music')">Music</button>
-        <button class="folder-opt" onclick="selectFolder('Movies')">Movies</button>
-        <button class="folder-opt btn-cancel" onclick="closeFolderModal()">Cancel</button>
-      </div>
-    </div>
 
     <h2 class="section-title">HTTP Tests via Go (httpbun.com)</h2>
 
@@ -391,13 +379,20 @@
     }
 
     // ── Download ──────────────────────────────────────────────────────────────
-    function openFolderModal()  { document.getElementById('folderModal').style.display = 'flex'; }
-    function closeFolderModal() { document.getElementById('folderModal').style.display = 'none'; }
+    // Callbacks invoked by the native Android bridge via evaluateJavascript
+    window.onFolderPicked = function(path) {
+      document.getElementById('dlDirDisplay').textContent = path;
+    };
+    window.onDownloadResult = function(msg) {
+      document.getElementById('dlResult').textContent = msg;
+    };
 
-    function selectFolder(dir) {
-      document.getElementById('dlDirDisplay').textContent = dir;
-      if (window.AndroidDownload) AndroidDownload.setDownloadDir(dir);
-      closeFolderModal();
+    function openFolderModal() {
+      if (window.AndroidDownload) {
+        AndroidDownload.pickFolder();   // opens native Android folder picker
+      } else {
+        document.getElementById('dlResult').textContent = 'Folder picker is Android only';
+      }
     }
 
     async function doDownload() {

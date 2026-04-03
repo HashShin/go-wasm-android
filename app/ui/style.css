@@ -229,45 +229,6 @@ textarea:focus {
   padding: 10px 16px !important;
 }
 
-.folder-modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 1000;
-  align-items: flex-end;
-  justify-content: center;
-}
-.folder-sheet {
-  background: #1a1d27;
-  border: 1px solid #2d3148;
-  border-radius: 16px 16px 0 0;
-  padding: 20px 16px 32px;
-  width: 100%;
-  max-width: 480px;
-}
-.folder-sheet-title {
-  text-align: center;
-  font-weight: 600;
-  color: #718096;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 14px;
-}
-.folder-opt {
-  background: #2d3148;
-  color: #e2e8f0;
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-.folder-opt:active { background: #3a3f5c; }
-.btn-cancel {
-  background: transparent !important;
-  color: #718096 !important;
-  margin-top: 4px;
-}
-.btn-cancel:active { background: #1a1d27 !important; }
 
 #cameraStream {
   display: none;

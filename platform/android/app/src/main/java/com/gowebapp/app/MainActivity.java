@@ -14,7 +14,8 @@ import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
 
-    private WebView webView;
+    private WebView        webView;
+    private DownloadBridge downloadBridge;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,9 +50,8 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(new NotificationBridge(this), "AndroidNotification");
         webView.addJavascriptInterface(new StorageBridge(this), "AndroidStorage");
         webView.addJavascriptInterface(new MicrophoneBridge(), "AndroidMicrophone");
-        webView.addJavascriptInterface(
-            new DownloadBridge(this, getString(R.string.default_download_dir)),
-            "AndroidDownload");
+        downloadBridge = new DownloadBridge(this, webView, getString(R.string.default_download_dir));
+        webView.addJavascriptInterface(downloadBridge, "AndroidDownload");
 
         // Request runtime permissions
         String[] perms = {
@@ -82,6 +82,15 @@ public class MainActivity extends Activity {
         if (getResources().getBoolean(R.bool.splash_enabled)) {
             startActivity(new Intent(this, SplashActivity.class));
         }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == DownloadBridge.REQUEST_PICK_FOLDER
+                && resultCode == RESULT_OK && data != null) {
+            downloadBridge.onFolderPicked(data.getData());
+        }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
