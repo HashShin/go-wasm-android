@@ -281,34 +281,47 @@
     }
 
     // ── Microphone ────────────────────────────────────────────────────────────
-    let micStream = null, audioCtx = null, micRaf = null;
+    let micStream = null, audioCtx = null, micRaf = null, micInterval = null;
 
     async function doMic() {
-      const el = document.getElementById('micResult');
-      try {
-        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        audioCtx = new AudioContext();
-        const analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 256;
-        audioCtx.createMediaStreamSource(micStream).connect(analyser);
-        const data = new Uint8Array(analyser.frequencyBinCount);
-        const fill = document.getElementById('volumeFill');
+      const el   = document.getElementById('micResult');
+      const fill = document.getElementById('volumeFill');
+
+      if (window.AndroidMicrophone) {
+        // Native Android bridge — reliable on WebView
+        AndroidMicrophone.start();
         el.textContent = 'Microphone active';
-        function tick() {
-          analyser.getByteFrequencyData(data);
-          fill.style.width = (Math.max(...data) / 255 * 100) + '%';
-          micRaf = requestAnimationFrame(tick);
+        micInterval = setInterval(() => {
+          fill.style.width = Math.min(AndroidMicrophone.getAmplitude() * 3, 1) * 100 + '%';
+        }, 50);
+      } else {
+        // Desktop browser fallback via getUserMedia
+        try {
+          micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          audioCtx = new AudioContext();
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 256;
+          audioCtx.createMediaStreamSource(micStream).connect(analyser);
+          const data = new Uint8Array(analyser.frequencyBinCount);
+          el.textContent = 'Microphone active';
+          function tick() {
+            analyser.getByteFrequencyData(data);
+            fill.style.width = (Math.max(...data) / 255 * 100) + '%';
+            micRaf = requestAnimationFrame(tick);
+          }
+          tick();
+        } catch (e) {
+          el.textContent = 'Error: ' + e.message;
         }
-        tick();
-      } catch (e) {
-        el.textContent = 'Error: ' + e.message;
       }
     }
 
     function doStopMic() {
-      if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
-      if (audioCtx)  { audioCtx.close(); audioCtx = null; }
-      if (micRaf)    { cancelAnimationFrame(micRaf); micRaf = null; }
+      if (window.AndroidMicrophone) AndroidMicrophone.stop();
+      if (micInterval) { clearInterval(micInterval); micInterval = null; }
+      if (micStream)   { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+      if (audioCtx)    { audioCtx.close(); audioCtx = null; }
+      if (micRaf)      { cancelAnimationFrame(micRaf); micRaf = null; }
       document.getElementById('volumeFill').style.width = '0%';
       document.getElementById('micResult').textContent = 'Microphone stopped';
     }

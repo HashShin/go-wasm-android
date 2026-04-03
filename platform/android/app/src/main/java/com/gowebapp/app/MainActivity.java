@@ -48,6 +48,7 @@ public class MainActivity extends Activity {
 
         webView.addJavascriptInterface(new NotificationBridge(this), "AndroidNotification");
         webView.addJavascriptInterface(new StorageBridge(this), "AndroidStorage");
+        webView.addJavascriptInterface(new MicrophoneBridge(), "AndroidMicrophone");
 
         // Request runtime permissions
         String[] perms = {
