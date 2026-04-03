@@ -5,13 +5,51 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
 import android.widget.ImageView;
+import java.io.IOException;
 
 public class SplashActivity extends Activity {
+
+    private final Handler handler = new Handler();
+    private Runnable dismissTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        int duration = getResources().getInteger(R.integer.splash_duration);
+
+        if (hasCustomSplash()) {
+            showHtmlSplash(duration);
+        } else {
+            showNativeSplash(duration);
+        }
+    }
+
+    // ── HTML splash (app/splash.html) ─────────────────────────────────────────
+
+    private void showHtmlSplash(int duration) {
+        WebView webView = new WebView(this);
+        WebSettings s = webView.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setAllowFileAccessFromFileURLs(true);
+
+        // JS bridge: splash.html can call SplashBridge.done() to dismiss early
+        webView.addJavascriptInterface(new SplashBridge(), "SplashBridge");
+        setContentView(webView);
+        webView.loadUrl("file:///android_asset/splash.html");
+
+        // Timer fallback in case splash.html never calls SplashBridge.done()
+        dismissTask = this::finish;
+        handler.postDelayed(dismissTask, duration);
+    }
+
+    // ── Native splash (layout + optional animation) ───────────────────────────
+
+    private void showNativeSplash(int duration) {
         setContentView(R.layout.activity_splash);
 
         if (getResources().getBoolean(R.bool.splash_animation)) {
@@ -20,7 +58,31 @@ public class SplashActivity extends Activity {
             icon.startAnimation(anim);
         }
 
-        int duration = getResources().getInteger(R.integer.splash_duration);
-        new Handler().postDelayed(this::finish, duration);
+        handler.postDelayed(this::finish, duration);
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private boolean hasCustomSplash() {
+        try {
+            getAssets().open("splash.html").close();
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    class SplashBridge {
+        @JavascriptInterface
+        public void done() {
+            handler.removeCallbacks(dismissTask);
+            runOnUiThread(() -> finish());
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        handler.removeCallbacksAndMessages(null);
+        super.onDestroy();
     }
 }

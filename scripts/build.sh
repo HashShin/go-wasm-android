@@ -68,6 +68,7 @@ log "wasm_exec.js copied"
 # ── 4. Copy HTML/CSS assets ───────────────────────────────────────────────────
 cp "$ASSETS_SRC/index.html" "$ASSETS_DST/"
 cp "$ASSETS_SRC/style.css"  "$ASSETS_DST/"
+[ -f "$ROOT/app/splash.html" ] && cp "$ROOT/app/splash.html" "$ASSETS_DST/" && log "splash.html copied"
 log "HTML/CSS assets copied"
 
 # ── 5. ARM64: native aapt2 override ──────────────────────────────────────────

@@ -107,10 +107,17 @@ VERSION_NAME="1.0"
 
 # Splash screen
 SPLASH_ENABLED=true       # false to disable entirely
-SPLASH_BG_COLOR="#FFFFFF" # background color
-SPLASH_IMAGE_SIZE=200     # icon size in dp
-SPLASH_DURATION=2000      # how long to show (milliseconds)
-SPLASH_ANIMATION=true     # fade + scale animation
+SPLASH_BG_COLOR="#FFFFFF" # background color (native splash only)
+SPLASH_IMAGE_SIZE=200     # icon size in dp (native splash only)
+SPLASH_DURATION=2000      # fallback timer in ms (used if splash.html doesn't call SplashBridge.done())
+SPLASH_ANIMATION=true     # fade + scale animation (native splash only)
+```
+
+For a fully custom splash, create `app/splash.html` with any HTML/CSS/JS animation. Call `SplashBridge.done()` from JS when your animation ends to dismiss it immediately:
+
+```js
+// inside app/splash.html
+SplashBridge.done();
 ```
 
 | File | What to change |
@@ -119,6 +126,7 @@ SPLASH_ANIMATION=true     # fade + scale animation
 | `app/ui/index.html` | UI markup |
 | `app/ui/style.css` | Styles |
 | `app/Icon.png` | App icon — run `make icons` to regenerate all sizes |
+| `app/splash.html` | Custom splash screen — full HTML/CSS/JS animation (optional, overrides native splash) |
 
 ---
 
