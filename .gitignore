@@ -10,6 +10,7 @@ platform/android/.gradle/
 platform/android/local.properties
 platform/android/app/src/main/assets/
 platform/android/app/src/main/res/mipmap-*/
+platform/android/app/src/main/res/drawable/
 
 # Signing keystore (keep safe, never commit)
 keystore.jks

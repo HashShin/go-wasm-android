@@ -126,6 +126,7 @@ SplashBridge.done();
 | `app/ui/index.html` | UI markup |
 | `app/ui/style.css` | Styles |
 | `app/Icon.png` | App icon — run `make icons` to regenerate all sizes |
+| `app/splash.png` | Custom splash image (optional — falls back to `Icon.png` if absent) |
 | `app/splash.html` | Custom splash screen — full HTML/CSS/JS animation (optional, overrides native splash) |
 
 ---
