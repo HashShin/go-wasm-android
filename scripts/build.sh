@@ -16,7 +16,7 @@ export PATH="$PATH:$(go env GOPATH)/bin"
 log() { echo "[build] $*"; }
 
 # ── 0. Load app config ────────────────────────────────────────────────────────
-source "$ROOT/app.conf"
+source "$ROOT/app/app.conf"
 log "App: $APP_NAME ($APP_ID) v$VERSION_NAME ($VERSION_CODE)"
 
 # Apply config to Android files

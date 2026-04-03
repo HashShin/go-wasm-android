@@ -57,7 +57,7 @@ scripts/
 Install [Termux](https://f-droid.org/packages/com.termux/) from F-Droid, then run this one-liner:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/HashShin/go-wasm-android/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/HashShin/go-wasm-android/main/scripts/install.sh | bash
 ```
 
 Installs Go, Java, aapt2, zipalign, and the Android SDK automatically via `pkg`. No PRoot or Linux emulation needed.
@@ -65,7 +65,7 @@ Installs Go, Java, aapt2, zipalign, and the Android SDK automatically via `pkg`.
 ### Linux (Ubuntu / Debian)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/HashShin/go-wasm-android/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/HashShin/go-wasm-android/main/scripts/install.sh | bash
 ```
 
 ---
@@ -97,7 +97,7 @@ make web
 
 ## Customise
 
-Edit `app.conf` to change the app name, ID, and version — applied automatically on every build:
+Edit `app/app.conf` to change the app name, ID, and version — applied automatically on every build:
 
 ```bash
 APP_NAME="My App"
