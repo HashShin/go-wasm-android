@@ -33,18 +33,66 @@ type splashConfig struct {
 	enabled   bool
 	bgColor   string
 	duration  int
+	imageSize int
 	animation bool
 }
 
-func loadSplashConfig() splashConfig {
-	enabled := os.Getenv("SPLASH_ENABLED")
-	cfg := splashConfig{
-		enabled:   enabled != "false",
-		bgColor:   envOr("SPLASH_BG_COLOR", "#ffffff"),
-		duration:  envInt("SPLASH_DURATION", 2000),
-		animation: os.Getenv("SPLASH_ANIMATION") != "false",
+// parseConf reads a KEY=VALUE file, stripping quotes and inline comments.
+func parseConf(path string) map[string]string {
+	out := make(map[string]string)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return out
 	}
-	return cfg
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		idx := strings.IndexByte(line, '=')
+		if idx < 0 {
+			continue
+		}
+		key := strings.TrimSpace(line[:idx])
+		val := strings.TrimSpace(line[idx+1:])
+		if ci := strings.Index(val, " #"); ci >= 0 {
+			val = strings.TrimSpace(val[:ci])
+		}
+		if len(val) >= 2 && val[0] == '"' && val[len(val)-1] == '"' {
+			val = val[1 : len(val)-1]
+		}
+		out[key] = val
+	}
+	return out
+}
+
+func loadSplashConfig() splashConfig {
+	conf := parseConf(filepath.Join(rootDir, "app", "app.conf"))
+
+	// env vars override app.conf
+	get := func(key, def string) string {
+		if v := os.Getenv(key); v != "" {
+			return v
+		}
+		if v, ok := conf[key]; ok && v != "" {
+			return v
+		}
+		return def
+	}
+	getInt := func(key string, def int) int {
+		if n, err := strconv.Atoi(get(key, "")); err == nil {
+			return n
+		}
+		return def
+	}
+
+	return splashConfig{
+		enabled:   get("SPLASH_ENABLED", "true") != "false",
+		bgColor:   get("SPLASH_BG_COLOR", "#ffffff"),
+		duration:  getInt("SPLASH_DURATION", 2000),
+		imageSize: getInt("SPLASH_IMAGE_SIZE", 200),
+		animation: get("SPLASH_ANIMATION", "true") != "false",
+	}
 }
 
 func envOr(key, def string) string {
@@ -317,10 +365,9 @@ setTimeout(function(){SplashBridge.done();}, %d);
 #_splash_img{animation:_splash_pop 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards;}
 </style>`
 	}
-	imgSize := envInt("SPLASH_IMAGE_SIZE", 200)
 	return fmt.Sprintf(`%s<div id="_splash" style="position:fixed;top:0;left:0;width:100%%;height:100%%;z-index:9999;background:%s;display:flex;align-items:center;justify-content:center;">
 <img id="_splash_img" src="/splash_image.png" style="width:%dpx;height:%dpx;object-fit:contain;" onerror="this.style.display='none'" />
-</div>%s`, animStyle, cfg.bgColor, imgSize, imgSize, dismiss)
+</div>%s`, animStyle, cfg.bgColor, cfg.imageSize, cfg.imageSize, dismiss)
 }
 
 func wasmHandler(w http.ResponseWriter, r *http.Request) {
@@ -341,6 +388,9 @@ func splashHTMLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// Rewrite Android asset URLs to web-served paths
 	data = bytes.ReplaceAll(data, []byte("file:///android_asset/"), []byte("/"))
+	// Inject SPLASH_BG_COLOR from app.conf
+	cfg := loadSplashConfig()
+	data = bytes.ReplaceAll(data, []byte("SPLASH_BG_COLOR"), []byte(cfg.bgColor))
 	// Shim: SplashBridge.done() inside the iframe calls parent.SplashBridge.done()
 	shim := `<script>window.SplashBridge={done:function(){try{parent.SplashBridge.done();}catch(e){}}}</script>`
 	data = bytes.Replace(data, []byte("</body>"), []byte(shim+"</body>"), 1)

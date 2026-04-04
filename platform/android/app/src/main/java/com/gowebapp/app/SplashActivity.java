@@ -1,6 +1,7 @@
 package com.gowebapp.app;
 
 import android.app.Activity;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.animation.Animation;
@@ -20,10 +21,14 @@ public class SplashActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Apply splash background immediately so the window never flashes white.
+        int bgColor = getResources().getColor(R.color.splash_background, getTheme());
+        getWindow().setBackgroundDrawable(new ColorDrawable(bgColor));
+
         int duration = getResources().getInteger(R.integer.splash_duration);
 
         if (hasCustomSplash()) {
-            showHtmlSplash(duration);
+            showHtmlSplash(duration, bgColor);
         } else {
             showNativeSplash(duration);
         }
@@ -31,8 +36,10 @@ public class SplashActivity extends Activity {
 
     // ── HTML splash (app/splash.html) ─────────────────────────────────────────
 
-    private void showHtmlSplash(int duration) {
+    private void showHtmlSplash(int duration, int bgColor) {
         WebView webView = new WebView(this);
+        webView.setBackgroundColor(bgColor);
+
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
         s.setAllowFileAccessFromFileURLs(true);

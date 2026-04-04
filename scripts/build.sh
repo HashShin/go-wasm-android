@@ -91,6 +91,11 @@ cat > "$ANDROID/app/src/main/res/values/download_config.xml" << EOF
 EOF
 
 # ── 1. Generate splash.xml resource ──────────────────────────────────────────
+if [[ ! "${SPLASH_BG_COLOR:-#ffffff}" =~ ^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$ ]]; then
+    echo "[build] ERROR: SPLASH_BG_COLOR='$SPLASH_BG_COLOR' is not a valid Android color."
+    echo "[build]        Use hex format: #RGB, #RRGGBB, or #AARRGGBB  (e.g. #000000 for black, #ffff00 for yellow)"
+    exit 1
+fi
 mkdir -p "$ANDROID/app/src/main/res/values"
 cat > "$ANDROID/app/src/main/res/values/splash.xml" << EOF
 <?xml version="1.0" encoding="utf-8"?>
@@ -140,7 +145,10 @@ elif [ -f "$ROOT/app/Icon.png" ]; then
     cp "$ROOT/app/Icon.png" "$DRAWABLE_DST/splash_image.png"
     log "Splash image: app/Icon.png (fallback)"
 fi
-[ -f "$ROOT/app/splash.html" ] && cp "$ROOT/app/splash.html" "$ASSETS_DST/" && log "splash.html copied"
+if [ -f "$ROOT/app/splash.html" ]; then
+    sed "s/SPLASH_BG_COLOR/${SPLASH_BG_COLOR:-#ffffff}/g" "$ROOT/app/splash.html" > "$ASSETS_DST/splash.html"
+    log "splash.html copied (bg=${SPLASH_BG_COLOR:-#ffffff})"
+fi
 # Notification icon: use app/notification_icon.png if present, otherwise fall back to app/Icon.png
 if [ -f "$ROOT/app/notification_icon.png" ]; then
     cp "$ROOT/app/notification_icon.png" "$DRAWABLE_DST/notification_icon.png"

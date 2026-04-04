@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="splash_enabled">true</bool>
+    <color name="splash_background">#000000</color>
+    <dimen name="splash_image_size">200dp</dimen>
+    <integer name="splash_duration">2000</integer>
+    <bool name="splash_animation">true</bool>
+</resources>

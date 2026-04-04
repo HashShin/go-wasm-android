@@ -16,14 +16,14 @@
     <div class="card">
       <label for="nameInput">Your name</label>
       <input id="nameInput" type="text" placeholder="Enter your name" />
-      <button onclick="doGreet()">Greet (Go)</button>
+      <button id="greetBtn">Greet (Go)</button>
       <p id="greetResult" class="result"></p>
     </div>
 
     <div class="card">
       <label for="textInput">Text to process</label>
       <input id="textInput" type="text" placeholder="Enter text" />
-      <button onclick="doProcess()">Process (Go)</button>
+      <button id="processBtn">Process (Go)</button>
       <p id="processResult" class="result"></p>
     </div>
 
@@ -34,12 +34,12 @@
         <span>+</span>
         <input id="numB" type="number" placeholder="B" />
       </div>
-      <button onclick="doAdd()">Add</button>
+      <button id="addBtn">Add</button>
       <p id="addResult" class="result"></p>
     </div>
 
     <div class="card">
-      <button onclick="doTimestamp()">Get Go Timestamp</button>
+      <button id="timestampBtn">Get Go Timestamp</button>
       <p id="tsResult" class="result"></p>
     </div>
 
@@ -48,8 +48,8 @@
     <div class="card">
       <label>Storage</label>
       <div class="btn-row">
-        <button onclick="doWriteFile()">Write File</button>
-        <button onclick="doReadFile()" class="btn-secondary">Read File</button>
+        <button id="writeFileBtn">Write File</button>
+        <button id="readFileBtn" class="btn-secondary">Read File</button>
       </div>
       <p id="storageResult" class="result"></p>
     </div>
@@ -57,8 +57,8 @@
     <div class="card">
       <label>Camera</label>
       <div class="btn-row">
-        <button onclick="doCamera()">Start Camera</button>
-        <button onclick="doStopCamera()" class="btn-secondary">Stop</button>
+        <button id="cameraBtn">Start Camera</button>
+        <button id="stopCameraBtn" class="btn-secondary">Stop</button>
       </div>
       <video id="cameraStream" autoplay playsinline muted></video>
       <p id="cameraResult" class="result"></p>
@@ -67,8 +67,8 @@
     <div class="card">
       <label>Microphone</label>
       <div class="btn-row">
-        <button onclick="doMic()">Test Mic</button>
-        <button onclick="doStopMic()" class="btn-secondary">Stop</button>
+        <button id="micBtn">Test Mic</button>
+        <button id="stopMicBtn" class="btn-secondary">Stop</button>
       </div>
       <div class="volume-track"><div id="volumeFill" class="volume-fill"></div></div>
       <p id="micResult" class="result"></p>
@@ -76,7 +76,7 @@
 
     <div class="card">
       <label>Location</label>
-      <button onclick="doLocation()">Get Location</button>
+      <button id="locationBtn">Get Location</button>
       <p id="locationResult" class="result"></p>
     </div>
 
@@ -86,7 +86,7 @@
       <label>Test Notification (Go)</label>
       <input id="notifTitle" type="text" placeholder="Title" value="Hello from Go!" />
       <input id="notifBody"  type="text" placeholder="Message" value="This is a test notification" />
-      <button onclick="doNotify()">Send Notification</button>
+      <button id="notifyBtn">Send Notification</button>
       <p id="notifResult" class="result"></p>
     </div>
 
@@ -100,12 +100,11 @@
       <label>Save folder</label>
       <div class="folder-select-row">
         <span id="dlDirDisplay" class="folder-display">Download</span>
-        <button onclick="openFolderModal()" class="btn-secondary folder-select-btn">Select Folder</button>
+        <button id="folderBtn" class="btn-secondary folder-select-btn">Select Folder</button>
       </div>
-      <button onclick="doDownload()">Download File</button>
+      <button id="downloadBtn">Download File</button>
       <p id="dlResult" class="result"></p>
     </div>
-
 
     <h2 class="section-title">HTTP Tests via Go (httpbun.com)</h2>
 
@@ -117,7 +116,7 @@
         <span>=</span>
         <input id="getVal" type="text" placeholder="param value" value="GoApp" />
       </div>
-      <button onclick="doGet()">Send GET (Go)</button>
+      <button id="getBtn">Send GET (Go)</button>
       <div id="getStatus" class="status-badge"></div>
       <pre id="getResult" class="result result-pre"></pre>
     </div>
@@ -129,351 +128,30 @@
   "app": "GoWebApp",
   "message": "Hello from Go!"
 }</textarea>
-      <button onclick="doPost()">Send POST (Go)</button>
+      <button id="postBtn">Send POST (Go)</button>
       <div id="postStatus" class="status-badge"></div>
       <pre id="postResult" class="result result-pre"></pre>
     </div>
   </div>
 
-  <script src="wasm_exec.js" onerror="window._noWasm=true"></script>
+  <script src="wasm_exec.js"></script>
   <script>
-    const IS_DESKTOP = !window._forceWasm && (location.protocol === 'http:' || location.protocol === 'https:');
-
-    function showApp(mode) {
-      document.getElementById('modeTag').textContent = mode;
-      const app = document.getElementById('app');
-      app.style.display = 'block';
-    }
-
-    async function api(path, params) {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      const r = await fetch(path + qs);
-      const j = await r.json();
-      return j.result;
-    }
-
-    function setupDesktopShim() {
-      window.GoApp = {
-        greet:     (user) => api('/api/greet',     { user }),
-        process:   (text) => api('/api/process',   { text }),
-        timestamp: ()     => api('/api/timestamp'),
-        add:       (a, b) => api('/api/add',       { a, b }),
-
-        httpGet: (url, qs) =>
-          fetch('/api/httpget?' + new URLSearchParams({ url, qs: qs || '' }))
-            .then(r => r.text()),
-
-        httpPost: (url, body) =>
-          fetch('/api/httppost', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url, body }),
-          }).then(r => r.text()),
-      };
-      showApp('Desktop (Go HTTP server)');
-    }
-
-    async function initWasm() {
-      const go = new Go();
-      const buf = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', 'app.wasm', true);
-        xhr.responseType = 'arraybuffer';
-        xhr.onload = () => resolve(xhr.response);
-        xhr.onerror = reject;
-        xhr.send();
+    (async () => {
+      const go  = new Go();
+      const xhr = await new Promise((ok, err) => {
+        const x = new XMLHttpRequest();
+        x.open('GET', 'app.wasm', true);
+        x.responseType = 'arraybuffer';
+        x.onload = () => ok(x.response);
+        x.onerror = err;
+        x.send();
       });
-      const result = await WebAssembly.instantiate(buf, go.importObject);
-      go.run(result.instance);
-      showApp('Android APK (Go WASM)');
-    }
+      const { instance } = await WebAssembly.instantiate(xhr, go.importObject);
+      go.run(instance);
+    })().catch(console.error);
 
-    if (IS_DESKTOP) {
-      setupDesktopShim();
-    } else {
-      initWasm().catch(console.error);
-    }
-
-    // Register service worker for showNotification() support (HTTP/HTTPS only)
-    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    if ('serviceWorker' in navigator && location.protocol !== 'file:')
       navigator.serviceWorker.register('/sw.js').catch(() => {});
-    }
-
-    async function doGreet() {
-      const name = document.getElementById('nameInput').value || 'World';
-      document.getElementById('greetResult').textContent = await GoApp.greet(name);
-    }
-
-    async function doProcess() {
-      const text = document.getElementById('textInput').value;
-      document.getElementById('processResult').textContent = await GoApp.process(text);
-    }
-
-    async function doAdd() {
-      const a = parseInt(document.getElementById('numA').value) || 0;
-      const b = parseInt(document.getElementById('numB').value) || 0;
-      document.getElementById('addResult').textContent = 'Result: ' + await GoApp.add(a, b);
-    }
-
-    async function doTimestamp() {
-      document.getElementById('tsResult').textContent = 'Unix timestamp: ' + await GoApp.timestamp();
-    }
-
-    function setStatus(id, text, ok) {
-      const el = document.getElementById(id);
-      el.textContent = text;
-      el.className = 'status-badge ' + (ok ? 'status-ok' : 'status-err');
-    }
-
-    function prettyJson(raw) {
-      const sep = raw.indexOf('\n\n');
-      const status = sep !== -1 ? raw.slice(0, sep) : '';
-      const body   = sep !== -1 ? raw.slice(sep + 2) : raw;
-      try { return status + '\n\n' + JSON.stringify(JSON.parse(body), null, 2); }
-      catch { return raw; }
-    }
-
-    async function doGet() {
-      const key = document.getElementById('getKey').value || 'param';
-      const val = document.getElementById('getVal').value || 'value';
-      const el  = document.getElementById('getResult');
-      el.textContent = 'Loading…';
-      setStatus('getStatus', '…', true);
-      try {
-        const raw = await GoApp.httpGet('https://httpbun.com/get', key + '=' + encodeURIComponent(val));
-        setStatus('getStatus', raw.split('\n')[0], true);
-        el.textContent = prettyJson(raw);
-      } catch (err) {
-        setStatus('getStatus', 'Error', false);
-        el.textContent = String(err);
-      }
-    }
-
-    // ── Init Android-specific defaults ───────────────────────────────────────
-    if (window.AndroidDownload) {
-      document.getElementById('dlDirDisplay').textContent = AndroidDownload.getDownloadDir();
-    }
-
-    // ── Storage ───────────────────────────────────────────────────────────────
-    function doWriteFile() {
-      const content = 'Test write at ' + new Date().toISOString();
-      const el = document.getElementById('storageResult');
-      if (window.AndroidStorage) {
-        el.textContent = AndroidStorage.writeFile('test.txt', content);
-      } else {
-        localStorage.setItem('test_file', content);
-        el.textContent = 'localStorage: ' + content;
-      }
-    }
-
-    function doReadFile() {
-      const el = document.getElementById('storageResult');
-      if (window.AndroidStorage) {
-        el.textContent = AndroidStorage.readFile('test.txt');
-      } else {
-        const val = localStorage.getItem('test_file');
-        el.textContent = val ? 'localStorage: ' + val : 'No file found — write first';
-      }
-    }
-
-    // ── Camera ────────────────────────────────────────────────────────────────
-    let cameraStream = null;
-
-    async function doCamera() {
-      const el = document.getElementById('cameraResult');
-      const video = document.getElementById('cameraStream');
-      try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = cameraStream;
-        video.style.display = 'block';
-        el.textContent = 'Camera active';
-      } catch (e) {
-        if (e.name === 'NotAllowedError')  el.textContent = 'Permission denied — allow camera in your browser or app settings';
-        else if (e.name === 'NotFoundError') el.textContent = 'No camera found on this device';
-        else el.textContent = 'Error: ' + e.message;
-      }
-    }
-
-    function doStopCamera() {
-      if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
-      const video = document.getElementById('cameraStream');
-      video.srcObject = null;
-      video.style.display = 'none';
-      document.getElementById('cameraResult').textContent = 'Camera stopped';
-    }
-
-    // ── Microphone ────────────────────────────────────────────────────────────
-    let micStream = null, audioCtx = null, micRaf = null, micInterval = null;
-
-    async function doMic() {
-      const el   = document.getElementById('micResult');
-      const fill = document.getElementById('volumeFill');
-
-      if (window.AndroidMicrophone) {
-        // Native Android bridge — reliable on WebView
-        AndroidMicrophone.start();
-        el.textContent = 'Microphone active';
-        micInterval = setInterval(() => {
-          fill.style.width = Math.min(AndroidMicrophone.getAmplitude() * 3, 1) * 100 + '%';
-        }, 50);
-      } else {
-        // Desktop browser fallback via getUserMedia
-        try {
-          micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          audioCtx = new AudioContext();
-          const analyser = audioCtx.createAnalyser();
-          analyser.fftSize = 256;
-          audioCtx.createMediaStreamSource(micStream).connect(analyser);
-          const data = new Uint8Array(analyser.frequencyBinCount);
-          el.textContent = 'Microphone active';
-          function tick() {
-            analyser.getByteFrequencyData(data);
-            fill.style.width = (Math.max(...data) / 255 * 100) + '%';
-            micRaf = requestAnimationFrame(tick);
-          }
-          tick();
-        } catch (e) {
-          if (e.name === 'NotAllowedError')   el.textContent = 'Permission denied — allow microphone in your browser or app settings';
-          else if (e.name === 'NotReadableError') el.textContent = 'Microphone in use by another app';
-          else el.textContent = 'Error: ' + e.message;
-        }
-      }
-    }
-
-    function doStopMic() {
-      if (window.AndroidMicrophone) AndroidMicrophone.stop();
-      if (micInterval) { clearInterval(micInterval); micInterval = null; }
-      if (micStream)   { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
-      if (audioCtx)    { audioCtx.close(); audioCtx = null; }
-      if (micRaf)      { cancelAnimationFrame(micRaf); micRaf = null; }
-      document.getElementById('volumeFill').style.width = '0%';
-      document.getElementById('micResult').textContent = 'Microphone stopped';
-    }
-
-    // ── Location ──────────────────────────────────────────────────────────────
-    function doLocation() {
-      const el = document.getElementById('locationResult');
-      if (!navigator.geolocation) {
-        el.textContent = 'Geolocation not available — requires HTTPS or localhost';
-        return;
-      }
-      el.textContent = 'Getting location…';
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          const c = pos.coords;
-          el.textContent =
-            'Lat: '      + c.latitude.toFixed(6)  + '\n' +
-            'Lng: '      + c.longitude.toFixed(6) + '\n' +
-            'Accuracy: ' + c.accuracy.toFixed(0)  + 'm';
-        },
-        err => {
-          const msgs = {
-            1: 'Permission denied — allow location in your browser or app settings',
-            2: 'Location unavailable — check GPS or network connection',
-            3: 'Timed out — move to an open area and try again',
-          };
-          el.textContent = msgs[err.code] || 'Error: ' + err.message;
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    }
-
-    // ── Download ──────────────────────────────────────────────────────────────
-    // Callbacks invoked by the native Android bridge via evaluateJavascript
-    window.onFolderPicked = function(path) {
-      document.getElementById('dlDirDisplay').textContent = path;
-    };
-    window.onDownloadResult = function(msg) {
-      document.getElementById('dlResult').textContent = msg;
-    };
-
-    function openFolderModal() {
-      if (window.AndroidDownload) {
-        AndroidDownload.pickFolder();   // opens native Android folder picker
-      } else {
-        document.getElementById('dlResult').textContent = 'Folder picker is Android only';
-      }
-    }
-
-    async function doDownload() {
-      const url      = document.getElementById('dlUrl').value.trim();
-      const filename = document.getElementById('dlFilename').value.trim() || 'download';
-      const el       = document.getElementById('dlResult');
-      if (!url) { el.textContent = 'Enter a URL first'; return; }
-
-      if (window.AndroidDownload) {
-        el.textContent = AndroidDownload.download(url, filename);
-      } else {
-        // Browser fallback — fetch then trigger save dialog
-        el.textContent = 'Downloading…';
-        try {
-          const resp = await fetch(url);
-          if (!resp.ok) throw new Error('HTTP ' + resp.status);
-          const blob = await resp.blob();
-          const a    = document.createElement('a');
-          a.href     = URL.createObjectURL(blob);
-          a.download = filename;
-          a.click();
-          URL.revokeObjectURL(a.href);
-          el.textContent = 'Saved: ' + filename + ' (' + (blob.size / 1024).toFixed(1) + ' KB)';
-        } catch (e) {
-          el.textContent = 'Error: ' + e.message;
-        }
-      }
-    }
-
-    async function doNotify() {
-      const title = document.getElementById('notifTitle').value || 'Go App';
-      const body  = document.getElementById('notifBody').value  || 'Test notification';
-      const el    = document.getElementById('notifResult');
-
-      // Android WebView native bridge
-      if (window.AndroidNotification) {
-        AndroidNotification.show(title, body);
-        el.textContent = 'Notification sent!';
-        return;
-      }
-
-      // Browser Notification API (desktop / browser)
-      if (!('Notification' in window)) {
-        el.textContent = 'Notifications not supported — requires HTTPS or localhost';
-        return;
-      }
-      try {
-        const perm = Notification.permission === 'default'
-          ? await Notification.requestPermission()
-          : Notification.permission;
-        if (perm !== 'granted') {
-          el.textContent = 'Permission denied — allow notifications in your browser settings';
-          return;
-        }
-        // Mobile Chrome requires ServiceWorker.showNotification(); fall back to new Notification()
-        if ('serviceWorker' in navigator) {
-          const reg = await navigator.serviceWorker.ready;
-          await reg.showNotification(title, { body });
-        } else {
-          new Notification(title, { body });
-        }
-        el.textContent = 'Notification sent!';
-      } catch (e) {
-        el.textContent = 'Error: ' + e.message;
-      }
-    }
-
-    async function doPost() {
-      const body = document.getElementById('postBody').value;
-      const el   = document.getElementById('postResult');
-      el.textContent = 'Loading…';
-      setStatus('postStatus', '…', true);
-      try {
-        const raw = await GoApp.httpPost('https://httpbun.com/post', body);
-        setStatus('postStatus', raw.split('\n')[0], true);
-        el.textContent = prettyJson(raw);
-      } catch (err) {
-        setStatus('postStatus', 'Error', false);
-        el.textContent = String(err);
-      }
-    }
   </script>
 </body>
 </html>
